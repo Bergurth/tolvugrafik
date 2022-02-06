@@ -17,6 +17,17 @@ var colorC = vec4(1.0, 1.0, 0.0, 1.0); // yellow
 
 var xmove = 0.0;
 var ymove = 0.0;
+var gold_visible = true;
+var gold_place = Math.floor((Math.random() * 5));
+var gold_places = [-0.8, -0.4, 0.0, 0.2, 0.8];
+var gold_verts_i = [
+	vec2(-0.025, 0.2),
+	vec2(-0.025, 0.25),
+	vec2(0.025, 0.2),
+	vec2(-0.025, 0.25),
+	vec2(0.025, 0.2), 
+	vec2(0.025, 0.25),
+    ]
 
 
 window.onload = function init() {
@@ -64,14 +75,12 @@ window.onload = function init() {
 	vec2(2, -0.1),
 	]
 
-    var gold_verts = [
-	vec2(-0.025, 0.2),
-	vec2(-0.025, 0.25),
-	vec2(0.025, 0.2),
-	vec2(-0.025, 0.25),
-	vec2(0.025, 0.2), 
-	vec2(0.025, 0.25),
-    ]
+
+    let gold_verts = gold_verts_i.slice();
+    for(i=0; i<6; i++) {
+	gold_verts[i][0] += gold_places[gold_place];
+    }
+    
     
     // Load the data into the GPU
     bufferId = gl.createBuffer();
@@ -175,13 +184,15 @@ var intervalId = setInterval(function() {
     gold_distance = Math.sqrt(
 	Math.pow(vertices[0][0]-gold_verts[0][0] - 0.025, 2) +
 	    Math.pow(vertices[0][1]-gold_verts[0][1] - 0.025, 2
-    ));
+		    ));
+    console.log(gold_distance);
 
     if(gold_distance <= 0.025){
 	console.log("chanching!");
 	score = parseInt(document.getElementById("score").innerHTML);
 	score += 1;
 	document.getElementById("score").innerHTML = score;
+	place_gold();
     }
 
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(vertices));
@@ -193,6 +204,19 @@ var intervalId = setInterval(function() {
 }, 2);
 
 }
+
+function place_gold() {
+    console.log("placing gold");
+        gold_place = Math.floor((Math.random() * 5));
+	let gold_verts = gold_verts_i.slice();
+	for(i=0; i<6; i++) {
+	    gold_verts[i][0] += gold_places[gold_place];
+	}
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffer_gold);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(gold_verts), gl.DYNAMIC_DRAW );
+    render();
+}
+
 
 
 function render() {
