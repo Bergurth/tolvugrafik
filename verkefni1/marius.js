@@ -171,6 +171,19 @@ var intervalId = setInterval(function() {
 	vertices[i][0] += xmove;
     }
 
+    // check 4 gold
+    gold_distance = Math.sqrt(
+	Math.pow(vertices[0][0]-gold_verts[0][0] - 0.025, 2) +
+	    Math.pow(vertices[0][1]-gold_verts[0][1] - 0.025, 2
+    ));
+
+    if(gold_distance <= 0.025){
+	console.log("chanching!");
+	score = parseInt(document.getElementById("score").innerHTML);
+	score += 1;
+	document.getElementById("score").innerHTML = score;
+    }
+
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatten(vertices));
     locPosition = gl.getAttribLocation( program, "vPosition" );
     gl.enableVertexAttribArray( locPosition );
