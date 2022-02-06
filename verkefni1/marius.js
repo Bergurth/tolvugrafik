@@ -222,7 +222,7 @@ var intervalId = setInterval(function() {
 	//score = parseInt(document.getElementById("score").innerHTML);
 	score += 1;
 	document.getElementById("score").innerHTML = score;
-	if(score >= 3){end_game_win();}
+	if(score >= 10){end_game_win();}
 	place_gold();
     }
 
