@@ -14,12 +14,13 @@ var gold_buffer;
 var colorA = vec4(0.0, 0.0, 1.0, 1.0);
 var colorB = vec4(0.0, 1.0, 0.0, 1.0);
 var colorC = vec4(1.0, 1.0, 0.0, 1.0); // yellow
+var score = 0;
 
 var xmove = 0.0;
 var ymove = 0.0;
 var gold_visible = true;
 var gold_place = Math.floor((Math.random() * 5));
-var gold_places = [-0.8, -0.4, 0.0, 0.2, 0.8];
+var gold_places = [-0.6, -0.4, 0.0, 0.4, 0.6];
 var gold_verts_i = [
 	vec2(-0.025, 0.2),
 	vec2(-0.025, 0.25),
@@ -27,6 +28,31 @@ var gold_verts_i = [
 	vec2(-0.025, 0.25),
 	vec2(0.025, 0.2), 
 	vec2(0.025, 0.25),
+    ]
+
+var score_line_verts = [
+    vec2(-0.92, 0.9),
+    vec2(-0.92, 0.8),
+    vec2(-0.9, 0.8),
+    vec2(-0.9, 0.9),
+    vec2(-0.88, 0.9),
+    vec2(-0.88, 0.8),
+    vec2(-0.86, 0.8),
+    vec2(-0.86, 0.9),
+    vec2(-0.84, 0.9),
+    vec2(-0.84, 0.8),
+
+    vec2(-0.82, 0.8),
+    vec2(-0.82, 0.9),
+    vec2(-0.8, 0.9),
+    vec2(-0.8, 0.8),
+    vec2(-0.78, 0.8),
+    vec2(-0.78, 0.9),
+    vec2(-0.76, 0.9),
+    vec2(-0.76, 0.8),
+    vec2(-0.74, 0.8),
+    vec2(-0.74, 0.9),
+    
     ]
 
 
@@ -76,7 +102,7 @@ window.onload = function init() {
 	]
 
 
-    let gold_verts = gold_verts_i.slice();
+    gold_verts = gold_verts_i.slice();
     for(i=0; i<6; i++) {
 	gold_verts[i][0] += gold_places[gold_place];
     }
@@ -96,6 +122,10 @@ window.onload = function init() {
     buffer_gold = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer_gold);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(gold_verts), gl.DYNAMIC_DRAW );
+
+    buffer_score_lines = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffer_score_lines);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(score_line_verts), gl.DYNAMIC_DRAW );
 
     // Associate out shader variables with our data buffer
     var vPosition = gl.getAttribLocation( program, "vPosition" );
@@ -189,9 +219,10 @@ var intervalId = setInterval(function() {
 
     if(gold_distance <= 0.025){
 	console.log("chanching!");
-	score = parseInt(document.getElementById("score").innerHTML);
+	//score = parseInt(document.getElementById("score").innerHTML);
 	score += 1;
 	document.getElementById("score").innerHTML = score;
+	if(score >= 3){end_game_win();}
 	place_gold();
     }
 
@@ -206,17 +237,39 @@ var intervalId = setInterval(function() {
 }
 
 function place_gold() {
-    console.log("placing gold");
-        gold_place = Math.floor((Math.random() * 5));
-	let gold_verts = gold_verts_i.slice();
-	for(i=0; i<6; i++) {
-	    gold_verts[i][0] += gold_places[gold_place];
-	}
+    gold_place = Math.floor((Math.random() * 5));
+    gold_verts = gold_verts_i.slice();
+    console.log(gold_verts);
+    console.log(gold_place);
+    for(i=0; i<6; i++) {
+	gold_verts[i][0] += gold_places[gold_place];
+	if(gold_verts[i][0] > 0.9 || gold_verts < -0.9){gold_verts[i][0] = 0.0;}
+    }
+    console.log(gold_verts);
     gl.bindBuffer( gl.ARRAY_BUFFER, buffer_gold);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(gold_verts), gl.DYNAMIC_DRAW );
     render();
 }
 
+function end_game_win() {
+    var game_end_canvas = document.getElementById('game-end');
+    canvas.hidden = true;
+    game_end_canvas.hidden = false;
+
+    var ctx = game_end_canvas.getContext("2d");
+    ctx.font = '50px serif';
+    ctx.fillText('WINNER !', 500, 300);
+}
+
+function end_game_lose() {
+    var game_end_canvas = document.getElementById('game-end');
+    canvas.hidden = true;
+    game_end_canvas.hidden = false;
+
+    var ctx = game_end_canvas.getContext("2d");
+    ctx.font = '50px serif';
+    ctx.fillText('GAME OVER', 500, 300);
+}
 
 
 function render() {
@@ -234,6 +287,12 @@ function render() {
     gl.uniform4fv( locColor, flatten(colorC) );
     gl.drawArrays( gl.TRIANGLES, 0, 6 );
 
+    // drawing score lines
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffer_score_lines );
+    gl.vertexAttribPointer( locPosition, 2, gl.FLOAT, false, 0, 0 );
+    gl.uniform4fv( locColor, flatten(colorC) );
+    gl.drawArrays( gl.LINES, 0, score * 2 );
+    
     
     // drawing mario    
     gl.bindBuffer( gl.ARRAY_BUFFER, bufferId );
