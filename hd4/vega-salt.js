@@ -20,6 +20,10 @@ var origY;
 
 var matrixLoc;
 
+var rotAlpha = 0.0;
+var rotBeta = 0.0;
+var betaRotate = 1.0;
+
 window.onload = function init()
 {
     canvas = document.getElementById( "gl-canvas" );
@@ -136,6 +140,13 @@ function render()
 {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    rotAlpha += 0.1;
+    if(rotBeta >= 30 || rotBeta <= -30){
+	betaRotate = betaRotate * -1.0;
+    }
+    rotBeta += 0.1 * betaRotate;
+
+    
     var mv = mat4(); // identity matrix
 
     unchanged = mv;
@@ -146,7 +157,9 @@ function render()
     
     // Build the seesaw
     //mv1 = mult( mv1, translate( 0.0, 0.1, 0.0 ) );
-    mv1 = mult( mv, scalem( 1.0, 0.1, 0.1 ) );
+    mv1 = mult(mv, rotateY(rotAlpha));
+    mv1 = mult(mv1, rotateZ(rotBeta));
+    mv1 = mult( mv1, scalem( 1.0, 0.1, 0.1 ) );
     //mv1 = mult( mv1, translate( 0.0, 0.3, 0.0 ) );
     // gl.uniformMatrix4fv(matrixLoc, false, flatten(mv1));
     //gl.uniformMatrix4fv(matrixLoc, false, flatten(mv1));
@@ -154,14 +167,14 @@ function render()
     gl.drawArrays( gl.TRIANGLES, 0, numVertices );
 
     // Then the column
-    mv1 = mult( unchanged, translate( 0.0, -0.2, 0.0 ) );
+    mv1 = mult( mv, translate( 0.0, -0.2, 0.0 ) );
     mv1 = mult( mv1, scalem( 0.1, 0.3, 0.1 ) );
     gl.uniformMatrix4fv(matrixLoc, false, flatten(mv1));
     gl.drawArrays( gl.TRIANGLES, 0, numVertices );
 
     // Finally the base
 
-    mv1 = mult( unchanged, scalem( 0.5, 0.1, 0.5 ) );
+    mv1 = mult( mv, scalem( 0.5, 0.1, 0.5 ) );
     mv1 = mult( mv1, translate( 0.0, -4.0, 0.0 ) );
     gl.uniformMatrix4fv(matrixLoc, false, flatten(mv1));
     gl.drawArrays( gl.TRIANGLES, 0, numVertices );
