@@ -1,0 +1,28 @@
+* Verkefni2
+
+kind ráfar handahófs 3d
+ + flýr ef úlfur við hliðiná -> öfug átt
+
+kind eignast reglulega afkvæmi, fer í autt hólf viðhliðiná
+
+ulfur ráfar um -- + skynjar kind í beini línu, i.e. sami dálkur
+- ef ulfur naer kind þá etur hann hana og hún hverfur
+
+eftir x kindur eingast uflur afkvæmi
+
+- ef ulfur etur ekki i x tíma deyr hann
+
+dyr er teningur -- rautt fyrir ulf, graent fyrir kind
+
+meisner space
+
+stikar (parameters):
+
+upphafsfjöldi kinda og úlfa
+dt milli faedinga hja kindum
+fjoldi etinna kinda adur en úlfur faedist
+dt thar til ulfur sveltir
+hradi hermunar
+
+staerd grindarinnar --- N  <--------------------------------
+                           kannski ekki parameter

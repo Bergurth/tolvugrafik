@@ -12,7 +12,6 @@ var NumVertices  = 36;
 
 var points = [];
 var mpoints = [];
-//var colors = [];
 
 var xAxis = 0;
 var yAxis = 1;
@@ -32,9 +31,12 @@ var matrixLoc;
 //colors
 var colorA = vec4(0.0, 0.0, 0.0, 1.0);
 var colorB = vec4(0.0, 0.0, 1.0, 1.0);
-
+var colorC = vec4(0.0, 1.0, 0.0, 1.0);
 // buffers
 var midpointsBuffer;
+
+var animals = [[1,1,1,0], [0,0,0,0]] // three position, and one sheep/wolf 
+
 
 window.onload = function init()
 {
@@ -94,6 +96,9 @@ window.onload = function init()
             origY = e.offsetY;
         }
     } );
+
+
+
     
     render();
 }
@@ -155,6 +160,37 @@ function quad(a, b, c, d)
     
 }
 
+function hasDuplicates(array) {
+    return (new Set(array)).size !== array.length;
+}
+
+var intervalId = setInterval(function() {
+    // move animals
+    // taken = [];
+    for( let i = 0; i < animals.length; i++){
+	xyz_choice = Math.floor(Math.random() * 3);
+	plus_minus_choice = Math.floor(Math.random() * 2);
+	prev_place = animals[i];
+	var position_p = animals[i][xyz_choice]
+	if(plus_minus_choice == 0){
+	    position_p -= 1;
+	}else {
+	    position_p += 1;
+	}
+
+	if(position_p == -1){
+	    position_p = 3;
+	}
+	
+	
+	animals[i][xyz_choice] = (position_p % 3);
+	if(hasDuplicates(animals)){ // to avoid 
+	    animals[i] = prev_place;    
+	}
+	// 
+    }
+}, 2000);
+
 
 function render()
 {
@@ -163,12 +199,29 @@ function render()
     var mv = mat4();
     mv = mult( mv, rotateX(spinX) );
     mv = mult( mv, rotateY(spinY) );
-    
+
+    draw_grid(mv);
+    requestAnimFrame( render );
+
+    // middle box again
+    mv = mult( mv, scalem( 0.13333, 0.13333, 0.13333 ) );
+    mvs = mult(mv, translate(
+	(animals[0][0] - 1.0) * 2.5 ,
+	(animals[0][1] - 1.0) * 2.5 ,
+	(animals[0][2] - 1.0) * 2.5
+    ))
+    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvs));
+    gl.uniform4fv( locColor, flatten(colorC) );
+    gl.drawArrays( gl.LINES, 0, NumVertices );
+
+}
+
+function draw_grid(mv){
     gl.uniformMatrix4fv(matrixLoc, false, flatten(mv));
 
     gl.uniform4fv( locColor, flatten(colorA) );
 
-    //gl.drawArrays( gl.TRIANGLES, 0, NumVertices );
+    
     gl.drawArrays( gl.LINES, 0, NumVertices );
 
     
@@ -272,24 +325,7 @@ function render()
     gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
     gl.drawArrays( gl.LINES, 0, NumVertices );
     
-    // middle box again
-    mv = mult( mv, scalem( 0.13333, 0.13333, 0.13333 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv));
-    gl.uniform4fv( locColor, flatten(colorB) );
-    gl.drawArrays( gl.LINES, 0, NumVertices );
     
 
-    // draw point
-    /*
-    gl.bindBuffer(gl.ARRAY_BUFFER, midpointsBuffer);
-    gl.vertexAttribPointer( locPosition, 3, gl.FLOAT, false, 0, 0 );
-    gl.uniform4fv( locColor, flatten(colorB) );
-    //gl.bindBuffer(gl.ARRAY_BUFFER, midpointsBuffer);
-    gl_PointSize = 10.0;
-    
-    //gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Float32Array(mpoints));
-    gl.drawArrays( gl.POINTS, 0, 3 );
-    */
-    requestAnimFrame( render );
 }
 
