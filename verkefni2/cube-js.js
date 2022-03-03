@@ -32,11 +32,21 @@ var matrixLoc;
 var colorA = vec4(0.0, 0.0, 0.0, 1.0);
 var colorB = vec4(0.0, 0.0, 1.0, 1.0);
 var colorC = vec4(0.0, 1.0, 0.0, 1.0);
+var colorD = vec4(1.0, 0.0, 0.0, 1.0);
 // buffers
 var midpointsBuffer;
 
-var animals = [[1,1,1,0], [0,0,0,0]] // three position, and one sheep/wolf 
+var animals = [
+    [1,1,1,0],
+    [0,0,0,0],
+    [2,2,2,0],
+    [1,0,0,1]
+    ] // three position, and one sheep/wolf 
 
+// todo: do turn lengths, plus hunger times
+// and deal with reproduction and hunger etc.
+
+// try maybe black background white frame ..
 
 window.onload = function init()
 {
@@ -164,13 +174,25 @@ function hasDuplicates(array) {
     return (new Set(array)).size !== array.length;
 }
 
+function arraySame(array1, array2, maxDepth){
+    for(let i = 0; i < Math.min(array1.length, maxDepth); i++){
+       if(array1[i] != array2[i]){
+       return false;
+       }
+     }
+    return true;
+ }
+
+function animal_in_same_place(animal1, animal2){
+    return arraySame(animal1, animal2, 3);
+}
+
 var intervalId = setInterval(function() {
     // move animals
-    // taken = [];
     for( let i = 0; i < animals.length; i++){
 	xyz_choice = Math.floor(Math.random() * 3);
 	plus_minus_choice = Math.floor(Math.random() * 2);
-	prev_place = animals[i];
+	prev_place = animals[i].slice(); // in order to pass by value
 	var position_p = animals[i][xyz_choice]
 	if(plus_minus_choice == 0){
 	    position_p -= 1;
@@ -184,8 +206,34 @@ var intervalId = setInterval(function() {
 	
 	
 	animals[i][xyz_choice] = (position_p % 3);
-	if(hasDuplicates(animals)){ // to avoid 
-	    animals[i] = prev_place;    
+	var animal_location_string_array = []
+	for(let j = 0; j < animals.length; j++){
+	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
+	}
+	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
+	    if(animals[i][3] == 0 ){ // sheep avoids collision with sheep or wolf 
+		animals[i] = prev_place;
+	    }
+	    else if(animals[i][3] == 1){ // a wolf is colliding with something.
+		animal_location_string_array[i] = "current";
+		collider_location = animal_location_string_array.indexOf(animals[i].slice(0,3).toString())
+		collider = animals[collider_location].slice();
+
+
+		if(collider[3] == 1) {
+		    // case 1 another wolf --> avoid collision
+		    animals[i] = prev_place;
+		}
+		else {
+		    // case 2 sheep --> eat sheep
+		    // todo eat sheep
+		    console.log("eating sheep");
+		    animals.splice(collider_location, 1); // removing sheep
+		    
+		}
+	    }
+	    // todo here deal with cases wolf etc
+	    //      deal with wolf eats ..
 	}
 	// 
     }
@@ -203,16 +251,23 @@ function render()
     draw_grid(mv);
     requestAnimFrame( render );
 
-    // middle box again
-    mv = mult( mv, scalem( 0.13333, 0.13333, 0.13333 ) );
-    mvs = mult(mv, translate(
-	(animals[0][0] - 1.0) * 2.5 ,
-	(animals[0][1] - 1.0) * 2.5 ,
-	(animals[0][2] - 1.0) * 2.5
-    ))
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvs));
-    gl.uniform4fv( locColor, flatten(colorC) );
-    gl.drawArrays( gl.LINES, 0, NumVertices );
+    // deal with animals
+        for ( var i = 0; i < animals.length; ++i ) {
+	    mvs1 = mult( mv, scalem( 0.13333, 0.13333, 0.13333 ) );
+	    mvs = mult(mvs1, translate(
+		(animals[i][0] - 1.0) * 2.5 ,
+		(animals[i][1] - 1.0) * 2.5 ,
+		(animals[i][2] - 1.0) * 2.5
+	    ))
+	    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvs));
+	    if(animals[i][3] == 0){
+		gl.uniform4fv( locColor, flatten(colorC) );
+	    }else{
+		gl.uniform4fv( locColor, flatten(colorD) );
+	    }
+	    gl.drawArrays( gl.LINES, 0, NumVertices );
+    }
+	    
 
 }
 
