@@ -29,24 +29,38 @@ var origY;
 var matrixLoc;
 
 //colors
-var colorA = vec4(0.0, 0.0, 0.0, 1.0);
-var colorB = vec4(0.0, 0.0, 1.0, 1.0);
-var colorC = vec4(0.0, 1.0, 0.0, 1.0);
-var colorD = vec4(1.0, 0.0, 0.0, 1.0);
-// buffers
-var midpointsBuffer;
+var colorA = vec4(0.0, 0.0, 0.0, 1.0); // black
+var colorB = vec4(0.0, 0.0, 1.0, 1.0); // blue
+var colorC = vec4(0.0, 1.0, 0.0, 1.0); // green
+var colorD = vec4(1.0, 0.0, 0.0, 1.0); // red
+var colorE = vec4(1.0, 1.0, 1.0, 1.0); // white
 
 var animals = [
-    [1,1,1,0],
-    [0,0,0,0],
-    [2,2,2,0],
-    [1,0,0,1]
-    ] // three position, and one sheep/wolf 
+    [1,1,1,0,0,0],
+    [0,0,0,0,0,0],
+    [2,2,2,0,0,0],
+    [1,0,0,1,0,0]
+    ] // three position, and one sheep/wolf, eaten, time_since_eaten 
+
+// ternary number series to codify locations in grid.
+var ternaries = ['000', '001', '002', '010', '011', '012', '020', '021', '022', '100', '101', '102', '110', '111', '112', '120', '121', '122', '200', '201', '202', '210', '211', '212', '220', '221', '222']
+
+var nSheep = 15;
+var nWolfs = 2;
 
 // todo: do turn lengths, plus hunger times
 // and deal with reproduction and hunger etc.
 
 // try maybe black background white frame ..
+
+var turnDuration = 1000; // 2000
+var turn = 0;
+
+var wolfTurns2hunger = 4;
+var wolfSheep2Repr = 15;
+var sheepTurns2Repr = 2;
+
+
 
 window.onload = function init()
 {
@@ -55,8 +69,7 @@ window.onload = function init()
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
-    colorCube();
-    midpoints();
+    Cube();
 
     console.log(flatten(mpoints));
     gl.viewport( 0, 0, canvas.width, canvas.height );
@@ -77,10 +90,6 @@ window.onload = function init()
     var vPosition = gl.getAttribLocation( program, "vPosition" );
     gl.vertexAttribPointer( vPosition, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
-
-    midpointsBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, midpointsBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(mpoints), gl.DYNAMIC_DRAW );
 
     locColor = gl.getUniformLocation( program, "rcolor" );
     locPosition = gl.getAttribLocation( program, "vPosition" );
@@ -107,43 +116,13 @@ window.onload = function init()
         }
     } );
 
-
+    random_animal_populate(nSheep,nWolfs);
 
     
     render();
 }
 
-function colorCube()
-{
-    quad();
-    //quad(0,0,0,0);
-    //quad( 1, 0, 3, 2 );
-    //quad( 2, 3, 7, 6 );
-    //quad( 3, 0, 4, 7 );
-    //quad( 6, 5, 1, 2 );
-    //quad( 4, 5, 6, 7 );
-    //quad( 5, 4, 0, 1 );
-}
-
-
-function midpoints()
-{
-    var midpoints = [
-	vec3( 0.0, 0.0, 0.0),
-	vec3( -0.6, -0.6,  0.6 ),
-        vec3( -0.5,  0.5,  0.6 ),
-        vec3(  0.5,  0.8,  0.5 ),	
-    ]
-    for ( var i = 0; i < midpoints.length; ++i ) {
-
-	mpoints.push( midpoints[i] );
-    }
-
-    console.log(mpoints);
-    
-}
-
-function quad(a, b, c, d) 
+function Cube() 
 {
     var vertices = [
         vec3( -0.5, -0.5,  0.5 ),
@@ -187,13 +166,61 @@ function animal_in_same_place(animal1, animal2){
     return arraySame(animal1, animal2, 3);
 }
 
-var intervalId = setInterval(function() {
-    // move animals
-    for( let i = 0; i < animals.length; i++){
-	xyz_choice = Math.floor(Math.random() * 3);
+function random_animal_populate(sheep, wolfs){
+    if((sheep + wolfs) > 27){
+	console.log("to many animals");
+	return 1;
+    }
+    animals = [];
+    turn = 0;
+    terns = ternaries.slice(); // pass by value
+    for(i = 0; i < sheep; i++){
+	place = terns.pop(Math.floor(Math.random() * terns.length));
+	animals.push([place[2],place[1],place[0],0,0,0])
+    }
+    for(i = 0; i < wolfs; i++){
+	place = terns.pop(Math.floor(Math.random() * terns.length));
+	animals.push([place[2],place[1],place[0],1,0,0])
+    }
+    return 0;
+}
+
+function reprodAnimalFrom(animal){
+    prev_place = animal.slice();
+    xyz_choice = Math.floor(Math.random() * 3);
+    if(animal[3] == 0){//Sheep
+	placement = animal.slice();
+	placement[xyz_choice] = get_prospect_placement_from(animal, xyz_choice);
+	animals.push(placement);
+	var animal_location_string_array = []
+	for(let j = 0; j < animals.length; j++){
+	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
+	}
+	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
+	    animals.pop();
+	}
+    }
+    else {//wolf
+	placement = animal.slice();
+	placement[xyz_choice] = get_prospect_placement_from(animal, xyz_choice);
+	// reset eaten and since eaten
+	placement[4] = 0;
+	placement[5] = 0;
+	animals.push(placement);
+	var animal_location_string_array = []
+	for(let j = 0; j < animals.length; j++){
+	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
+	}
+	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
+	    animals.pop();
+	}
+    }
+    
+}
+
+function get_prospect_placement_from(animal , direction){
 	plus_minus_choice = Math.floor(Math.random() * 2);
-	prev_place = animals[i].slice(); // in order to pass by value
-	var position_p = animals[i][xyz_choice]
+    var position_p = animal[direction];
 	if(plus_minus_choice == 0){
 	    position_p -= 1;
 	}else {
@@ -203,16 +230,24 @@ var intervalId = setInterval(function() {
 	if(position_p == -1){
 	    position_p = 3;
 	}
-	
-	
-	animals[i][xyz_choice] = (position_p % 3);
+
+    return (position_p % 3);
+}
+
+var intervalId = setInterval(function() {
+    turn += 1;
+    // move animals
+    for( let i = 0; i < animals.length; i++){
+	xyz_choice = Math.floor(Math.random() * 3);
+	prev_place = animals[i].slice(); // in order to pass by value
+	animals[i][xyz_choice] = get_prospect_placement_from(animals[i], xyz_choice);
 	var animal_location_string_array = []
 	for(let j = 0; j < animals.length; j++){
 	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
 	}
 	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
 	    if(animals[i][3] == 0 ){ // sheep avoids collision with sheep or wolf 
-		animals[i] = prev_place;
+		animals[i] = prev_place; // move taken back
 	    }
 	    else if(animals[i][3] == 1){ // a wolf is colliding with something.
 		animal_location_string_array[i] = "current";
@@ -222,22 +257,36 @@ var intervalId = setInterval(function() {
 
 		if(collider[3] == 1) {
 		    // case 1 another wolf --> avoid collision
-		    animals[i] = prev_place;
+		    animals[i] = prev_place; // move taken back
 		}
 		else {
 		    // case 2 sheep --> eat sheep
-		    // todo eat sheep
 		    console.log("eating sheep");
+		    wolf = animals[i]; // pass by ref
+		    wolf[4] += 1; // wolf eat count +
+		    wolf[5] = 0;  // wolf satiated
+
 		    animals.splice(collider_location, 1); // removing sheep
-		    
+
 		}
 	    }
-	    // todo here deal with cases wolf etc
-	    //      deal with wolf eats ..
+	} // --- close of hasDuplicates
+	if(animals[i][3] == 1){
+	    animals[i][5] += 1; // hungering the wolf
+	    if(animals[i][5] > wolfTurns2hunger ){
+		console.log("A wolf starved");
+		animals.pop(i);
+	    }
+	    if(animals[i][4] % wolfSheep2Repr == 0 && animals[i][4] != 0){
+		reprodAnimalFrom(animals[i]);
+	    } 
 	}
-	// 
-    }
-}, 2000);
+	// reproduce sheep
+	if(turn % sheepTurns2Repr == 0 && animals[i][3] == 0){
+	    reprodAnimalFrom(animals[i]);
+	}
+    } // for loop
+}, turnDuration);
 
 
 function render()
