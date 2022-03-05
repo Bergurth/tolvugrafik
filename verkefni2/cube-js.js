@@ -62,7 +62,7 @@ var wolfSheep2Repr = 15;
 var sheepTurns2Repr = 2;
 
 var cubeSideLength = 3;
-
+var grid_list = [];
 
 window.onload = function init()
 {
@@ -176,7 +176,7 @@ window.onload = function init()
             origY = e.offsetY;
         }
     } );
-
+    grid_list = produce_grid_list(cubeSideLength);
     random_animal_populate(nSheep,nWolfs);
 
     
@@ -250,7 +250,7 @@ function random_animal_populate(sheep, wolfs){
     }
     animals = [];
     turn = 0;
-    terns = produce_grid_list(cubeSideLength);
+    terns = grid_list.slice();
     for(i = 0; i < sheep; i++){
 	place = terns.pop(Math.floor(Math.random() * terns.length));
 	newsheep = place.split('').concat([0,0,0]) 
