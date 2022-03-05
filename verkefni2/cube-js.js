@@ -235,10 +235,8 @@ function produce_grid_list(sidelength){
     l = [];
     for(i=0; i < Math.pow(sidelength, 3); i++){
 	element = (i).toString(sidelength);
-	if(element.length == 1){
-	    element = '00' + element;
-	} else if( element.length == 2) {
-	    element = '0' + element;
+	if(element.length < sidelength){
+	    element = '0'.repeat(sidelength - element.length) + element;
 	}
 	l.push(element)
     }
@@ -255,11 +253,13 @@ function random_animal_populate(sheep, wolfs){
     terns = produce_grid_list(cubeSideLength);
     for(i = 0; i < sheep; i++){
 	place = terns.pop(Math.floor(Math.random() * terns.length));
-	animals.push([place[2],place[1],place[0],0,0,0])
+	newsheep = place.split('').concat([0,0,0]) 
+	animals.push(newsheep);
     }
     for(i = 0; i < wolfs; i++){
 	place = terns.pop(Math.floor(Math.random() * terns.length));
-	animals.push([place[2],place[1],place[0],1,0,0])
+	newwolf = place.split('').concat([1,0,0]);
+	animals.push(newwolf);
     }
     return 0;
 }
@@ -267,13 +267,13 @@ function random_animal_populate(sheep, wolfs){
 function reprodAnimalFrom(animal){
     prev_place = animal.slice();
     xyz_choice = Math.floor(Math.random() * 3);
-    if(animal[3] == 0){//Sheep
+    if(animal[cubeSideLength] == 0){//Sheep
 	placement = animal.slice();
 	placement[xyz_choice] = get_prospect_placement_from(animal, xyz_choice);
 	animals.push(placement);
 	var animal_location_string_array = []
 	for(let j = 0; j < animals.length; j++){
-	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
+	    animal_location_string_array[j] = animals[j].slice(0,cubeSideLength).toString();
 	}
 	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
 	    animals.pop();
@@ -283,12 +283,12 @@ function reprodAnimalFrom(animal){
 	placement = animal.slice();
 	placement[xyz_choice] = get_prospect_placement_from(animal, xyz_choice);
 	// reset eaten and since eaten
-	placement[4] = 0;
-	placement[5] = 0;
+	placement[cubeSideLength + 1] = 0;
+	placement[cubeSideLength + 2] = 0;
 	animals.push(placement);
 	var animal_location_string_array = []
 	for(let j = 0; j < animals.length; j++){
-	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
+	    animal_location_string_array[j] = animals[j].slice(0,cubeSideLength).toString();
 	}
 	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
 	    animals.pop();
@@ -307,10 +307,10 @@ function get_prospect_placement_from(animal , direction){
 	}
 
 	if(position_p == -1){
-	    position_p = 3;
+	    position_p = cubeSideLength;
 	}
 
-    return (position_p % 3);
+    return (position_p % cubeSideLength);
 }
 
 function do_turn() {
@@ -322,7 +322,7 @@ function do_turn() {
 	animals[i][xyz_choice] = get_prospect_placement_from(animals[i], xyz_choice);
 	var animal_location_string_array = []
 	for(let j = 0; j < animals.length; j++){
-	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
+	    animal_location_string_array[j] = animals[j].slice(0,cubeSideLength).toString();
 	}
 	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
 	    if(animals[i][3] == 0 ){ // sheep avoids collision with sheep or wolf 
@@ -330,11 +330,11 @@ function do_turn() {
 	    }
 	    else if(animals[i][3] == 1){ // a wolf is colliding with something.
 		animal_location_string_array[i] = "current";
-		collider_location = animal_location_string_array.indexOf(animals[i].slice(0,3).toString())
+		collider_location = animal_location_string_array.indexOf(animals[i].slice(0,cubeSideLength).toString())
 		collider = animals[collider_location].slice();
 
 
-		if(collider[3] == 1) {
+		if(collider[cubeSideLength] == 1) {
 		    // case 1 another wolf --> avoid collision
 		    animals[i] = prev_place; // move taken back
 		}
@@ -342,27 +342,27 @@ function do_turn() {
 		    // case 2 sheep --> eat sheep
 		    console.log("eating sheep");
 		    wolf = animals[i]; // pass by ref
-		    wolf[4] += 1; // wolf eat count +
-		    wolf[5] = 0;  // wolf satiated
+		    wolf[cubeSideLength + 1] += 1; // wolf eat count +
+		    wolf[cubeSideLength + 2] = 0;  // wolf satiated
 
 		    animals.splice(collider_location, 1); // removing sheep
 		    continue
 		}
 	    }
 	} // --- close of hasDuplicates
-	if(animals[i][3] == 1){
-	    animals[i][5] += 1; // hungering the wolf
-	    if(animals[i][5] > wolfTurns2hunger ){
+	if(animals[i][cubeSideLength] == 1){
+	    animals[i][cubeSideLength + 2] += 1; // hungering the wolf
+	    if(animals[i][cubeSideLength + 2] > wolfTurns2hunger ){
 		console.log("A wolf starved");
 		animals.pop(i);
 		continue
 	    }
-	    if(animals[i][4] % wolfSheep2Repr == 0 && animals[i][4] != 0){
+	    if(animals[i][cubeSideLength + 1] % wolfSheep2Repr == 0 && animals[i][cubeSideLength +1] != 0){
 		reprodAnimalFrom(animals[i]);
 	    } 
 	}
 	// reproduce sheep
-	if(turn % sheepTurns2Repr == 0 && animals[i][3] == 0){
+	if(turn % sheepTurns2Repr == 0 && animals[i][cubeSideLength] == 0){
 	    reprodAnimalFrom(animals[i]);
 	}
     } // for loop
