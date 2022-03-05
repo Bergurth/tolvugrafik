@@ -43,8 +43,9 @@ var animals = [
     ] // three position, and one sheep/wolf, eaten, time_since_eaten 
 
 // ternary number series to codify locations in grid.
+/*
 var ternaries = ['000', '001', '002', '010', '011', '012', '020', '021', '022', '100', '101', '102', '110', '111', '112', '120', '121', '122', '200', '201', '202', '210', '211', '212', '220', '221', '222']
-
+*/
 var nSheep = 15;
 var nWolfs = 2;
 
@@ -60,11 +61,70 @@ var wolfTurns2hunger = 4;
 var wolfSheep2Repr = 15;
 var sheepTurns2Repr = 2;
 
+var cubeSideLength = 3;
 
 
 window.onload = function init()
 {
     canvas = document.getElementById( "gl-canvas" );
+
+    turnDurationSlider = document.getElementById("turnduration");
+    turnDurationDisplay = document.getElementById("turndurationdisplay");
+    turnDurationSlider.oninput = function() {
+	console.log("turnDuration changing");
+	turnDuration = this.value;
+	clearInterval(intervalId);
+	intervalId = setInterval(do_turn, turnDuration);
+	turnDurationDisplay.innerHTML = turnDuration;
+    }
+    sheepNumberSlider = document.getElementById("sheepnumber");
+    sheepNumberDisplay = document.getElementById("sheepnumberdisplay");
+    sheepNumberSlider.oninput = function() {
+	console.log("nSheep changing");
+	nSheep = parseInt(this.value);
+
+	if((nSheep + nWolfs) > 27){
+	    nWolfs = 27 - nSheep;
+	}
+	clearInterval(intervalId);
+	random_animal_populate(nSheep,nWolfs);
+	intervalId = setInterval(do_turn, turnDuration);
+	sheepNumberDisplay.innerHTML = nSheep;
+    }
+    wolfNumberSlider = document.getElementById("wolfnumber");
+    wolfNumberDisplay = document.getElementById("wolfnumberdisplay");
+    wolfNumberSlider.oninput = function() {
+	console.log("nWolfs changing");
+	nWolfs = parseInt(this.value);
+
+	if((nSheep + nWolfs) > 27){
+	    nSheep = 27 - nWolfs;
+	}
+	clearInterval(intervalId);
+	random_animal_populate(nSheep,nWolfs);
+	intervalId = setInterval(do_turn, turnDuration);
+	wolfNumberDisplay.innerHTML = nWolfs;
+    }
+    wolfHungerSlider = document.getElementById("wolfhunger");
+    wolfHungerDisplay = document.getElementById("wolfhungerdisplay");
+    wolfHungerSlider.oninput = function(){
+	wolfTurns2hunger = parseInt(this.value);
+	wolfHungerDisplay.innerHTML = this.value;
+    }
+    wolfReproductionSlider = document.getElementById("wolfrepr");
+    wolfReproductionDisplay = document.getElementById("wolfrepdisplay");
+    wolfReproductionSlider.oninput =  function(){
+	console.log("changing wolf reproduction");
+	wolfSheep2Repr = parseInt(this.value);
+	wolfReproductionDisplay.innerHTML = this.value;
+    }
+    sheepReproductionSlider = document.getElementById("sheeprep");
+    sheepReprDisplay = document.getElementById("sheeprepdisplay");
+    sheepReproductionSlider.oninput = function(){
+	sheepTurns2Repr = parseInt(this.value);
+	sheepReprDisplay.innerHTML = this.value;
+    }
+
     
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
@@ -73,7 +133,8 @@ window.onload = function init()
 
     console.log(flatten(mpoints));
     gl.viewport( 0, 0, canvas.width, canvas.height );
-    gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+    //gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
+    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
     
     gl.enable(gl.DEPTH_TEST);
 
@@ -166,6 +227,24 @@ function animal_in_same_place(animal1, animal2){
     return arraySame(animal1, animal2, 3);
 }
 
+function produce_grid_list(sidelength){
+    // produces a series of base_sidelength_numbers
+    // i.e. base 3 or ternary for sidelength 3 for example
+    // codifying a the places in a cube of the same
+    // sidelength
+    l = [];
+    for(i=0; i < Math.pow(sidelength, 3); i++){
+	element = (i).toString(sidelength);
+	if(element.length == 1){
+	    element = '00' + element;
+	} else if( element.length == 2) {
+	    element = '0' + element;
+	}
+	l.push(element)
+    }
+    return l;
+}
+
 function random_animal_populate(sheep, wolfs){
     if((sheep + wolfs) > 27){
 	console.log("to many animals");
@@ -173,7 +252,7 @@ function random_animal_populate(sheep, wolfs){
     }
     animals = [];
     turn = 0;
-    terns = ternaries.slice(); // pass by value
+    terns = produce_grid_list(cubeSideLength);
     for(i = 0; i < sheep; i++){
 	place = terns.pop(Math.floor(Math.random() * terns.length));
 	animals.push([place[2],place[1],place[0],0,0,0])
@@ -234,7 +313,7 @@ function get_prospect_placement_from(animal , direction){
     return (position_p % 3);
 }
 
-var intervalId = setInterval(function() {
+function do_turn() {
     turn += 1;
     // move animals
     for( let i = 0; i < animals.length; i++){
@@ -267,7 +346,7 @@ var intervalId = setInterval(function() {
 		    wolf[5] = 0;  // wolf satiated
 
 		    animals.splice(collider_location, 1); // removing sheep
-
+		    continue
 		}
 	    }
 	} // --- close of hasDuplicates
@@ -276,6 +355,7 @@ var intervalId = setInterval(function() {
 	    if(animals[i][5] > wolfTurns2hunger ){
 		console.log("A wolf starved");
 		animals.pop(i);
+		continue
 	    }
 	    if(animals[i][4] % wolfSheep2Repr == 0 && animals[i][4] != 0){
 		reprodAnimalFrom(animals[i]);
@@ -286,7 +366,10 @@ var intervalId = setInterval(function() {
 	    reprodAnimalFrom(animals[i]);
 	}
     } // for loop
-}, turnDuration);
+}
+
+
+var intervalId = setInterval(do_turn, turnDuration);
 
 
 function render()
@@ -323,7 +406,7 @@ function render()
 function draw_grid(mv){
     gl.uniformMatrix4fv(matrixLoc, false, flatten(mv));
 
-    gl.uniform4fv( locColor, flatten(colorA) );
+    gl.uniform4fv( locColor, flatten(colorE) );
 
     
     gl.drawArrays( gl.LINES, 0, NumVertices );
