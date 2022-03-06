@@ -48,7 +48,7 @@ var turnDuration = 1000; // 2000
 var turn = 0;
 
 var wolfTurns2hunger = 4;
-var wolfSheep2Repr = 15;
+var wolfSheep2Repr = 6;
 var sheepTurns2Repr = 2;
 
 var cubeSideLength = 5.0;
