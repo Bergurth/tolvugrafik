@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////
-//    Sýnidæmi í Tölvugrafík
-//     Vörpunarfylki búið til í JS og sent yfir til
-//     hnútalitara, sem margfaldar (þ.e. varpar)
+//    Verkefni2 - TÖL203M - Bergur Þorgeirsson -2022
+//     
+//     Eco-cube
 //
-//    Hjálmtýr Hafsteinsson, febrúar 2022
+//    kennari: Hjálmtýr Hafsteinsson
 /////////////////////////////////////////////////////////////////
 var canvas;
 var gl;
