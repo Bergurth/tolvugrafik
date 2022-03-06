@@ -11,7 +11,6 @@ var gl;
 var NumVertices  = 36;
 
 var points = [];
-var mpoints = [];
 
 var xAxis = 0;
 var yAxis = 1;
@@ -42,17 +41,8 @@ var animals = [
     [1,0,0,1,0,0]
     ] // three position, and one sheep/wolf, eaten, time_since_eaten 
 
-// ternary number series to codify locations in grid.
-/*
-var ternaries = ['000', '001', '002', '010', '011', '012', '020', '021', '022', '100', '101', '102', '110', '111', '112', '120', '121', '122', '200', '201', '202', '210', '211', '212', '220', '221', '222']
-*/
-var nSheep = 15;
-var nWolfs = 2;
-
-// todo: do turn lengths, plus hunger times
-// and deal with reproduction and hunger etc.
-
-// try maybe black background white frame ..
+var nSheep = 55;
+var nWolfs = 4;
 
 var turnDuration = 1000; // 2000
 var turn = 0;
@@ -61,13 +51,38 @@ var wolfTurns2hunger = 4;
 var wolfSheep2Repr = 15;
 var sheepTurns2Repr = 2;
 
-var cubeSideLength = 3;
+var cubeSideLength = 5.0;
 var grid_list = [];
+
+var gridSize = 0;
 
 window.onload = function init()
 {
     canvas = document.getElementById( "gl-canvas" );
 
+    gridSize = Math.pow(cubeSideLength, 3);
+
+    sheepNumberSlider = document.getElementById("sheepnumber");
+    sheepNumberDisplay = document.getElementById("sheepnumberdisplay");
+    wolfNumberSlider = document.getElementById("wolfnumber");
+    wolfNumberDisplay = document.getElementById("wolfnumberdisplay");
+
+    gridSizeSlider = document.getElementById("gridsize");
+    gridSizeDisplay = document.getElementById("gridsizedisplay");
+    gridSizeSlider.oninput = function() {
+	console.log("grid size changing");
+	cubeSideLength = this.value;
+	gridSize = Math.pow(cubeSideLength, 3);
+	//clearInterval(intervalId);
+	gridSizeDisplay.innerHTML = cubeSideLength;
+	grid_list = produce_grid_list(cubeSideLength);
+	animals = [];
+	random_animal_populate(nSheep,nWolfs);
+	sheepNumberSlider.max = Math.pow(cubeSideLength, 3 ) -1;
+	wolfNumberSlider.max = Math.pow(cubeSideLength, 3 ) -1;
+    }
+
+    
     turnDurationSlider = document.getElementById("turnduration");
     turnDurationDisplay = document.getElementById("turndurationdisplay");
     turnDurationSlider.oninput = function() {
@@ -77,28 +92,24 @@ window.onload = function init()
 	intervalId = setInterval(do_turn, turnDuration);
 	turnDurationDisplay.innerHTML = turnDuration;
     }
-    sheepNumberSlider = document.getElementById("sheepnumber");
-    sheepNumberDisplay = document.getElementById("sheepnumberdisplay");
     sheepNumberSlider.oninput = function() {
 	console.log("nSheep changing");
 	nSheep = parseInt(this.value);
 
-	if((nSheep + nWolfs) > 27){
-	    nWolfs = 27 - nSheep;
+	if((nSheep + nWolfs) > gridSize){
+	    nWolfs = gridSize - nSheep;
 	}
 	clearInterval(intervalId);
 	random_animal_populate(nSheep,nWolfs);
 	intervalId = setInterval(do_turn, turnDuration);
 	sheepNumberDisplay.innerHTML = nSheep;
     }
-    wolfNumberSlider = document.getElementById("wolfnumber");
-    wolfNumberDisplay = document.getElementById("wolfnumberdisplay");
     wolfNumberSlider.oninput = function() {
 	console.log("nWolfs changing");
 	nWolfs = parseInt(this.value);
 
-	if((nSheep + nWolfs) > 27){
-	    nSheep = 27 - nWolfs;
+	if((nSheep + nWolfs) > gridSize){
+	    nSheep = gridSize - nWolfs;
 	}
 	clearInterval(intervalId);
 	random_animal_populate(nSheep,nWolfs);
@@ -131,7 +142,6 @@ window.onload = function init()
 
     Cube();
 
-    console.log(flatten(mpoints));
     gl.viewport( 0, 0, canvas.width, canvas.height );
     //gl.clearColor( 1.0, 1.0, 1.0, 1.0 );
     gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
@@ -235,8 +245,8 @@ function produce_grid_list(sidelength){
     l = [];
     for(i=0; i < Math.pow(sidelength, 3); i++){
 	element = (i).toString(sidelength);
-	if(element.length < sidelength){
-	    element = '0'.repeat(sidelength - element.length) + element;
+	if(element.length < 3){
+	    element = '0'.repeat(3 - element.length) + element;
 	}
 	l.push(element)
     }
@@ -244,7 +254,9 @@ function produce_grid_list(sidelength){
 }
 
 function random_animal_populate(sheep, wolfs){
-    if((sheep + wolfs) > 27){
+    grid_list = produce_grid_list(cubeSideLength);
+    gridSize = Math.pow(cubeSideLength, 3);
+    if((sheep + wolfs) > gridSize){
 	console.log("to many animals");
 	return 1;
     }
@@ -264,34 +276,45 @@ function random_animal_populate(sheep, wolfs){
     return 0;
 }
 
-function reprodAnimalFrom(animal){
+function reprodAnimalFrom(animal_index){
+    animal = animals[animal_index]
     prev_place = animal.slice();
     xyz_choice = Math.floor(Math.random() * 3);
-    if(animal[cubeSideLength] == 0){//Sheep
+    if(animal[3] == 0){//Sheep
 	placement = animal.slice();
 	placement[xyz_choice] = get_prospect_placement_from(animal, xyz_choice);
 	animals.push(placement);
-	var animal_location_string_array = []
+	var animal_location_string_array_i = []
 	for(let j = 0; j < animals.length; j++){
-	    animal_location_string_array[j] = animals[j].slice(0,cubeSideLength).toString();
+	    animal_location_string_array_i[j] = animals[j].slice(0,3).toString();
 	}
-	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
-	    animals.pop();
+	if(hasDuplicates(animal_location_string_array_i)){ // some kind of animal collision
+	    animals.pop(); // sheep wont repr on other animal
 	}
     }
     else {//wolf
 	placement = animal.slice();
 	placement[xyz_choice] = get_prospect_placement_from(animal, xyz_choice);
 	// reset eaten and since eaten
-	placement[cubeSideLength + 1] = 0;
-	placement[cubeSideLength + 2] = 0;
-	animals.push(placement);
-	var animal_location_string_array = []
+	placement[4] = 0;
+	placement[5] = 0;
+	pushed_place = animals.push(placement);
+	var animal_location_string_array_i = []
 	for(let j = 0; j < animals.length; j++){
-	    animal_location_string_array[j] = animals[j].slice(0,cubeSideLength).toString();
+	    animal_location_string_array_i[j] = animals[j].slice(0,3).toString();
 	}
-	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
-	    animals.pop();
+	if(hasDuplicates(animal_location_string_array_i)){ // some kind of animal collision 
+	    animal_location_string_array_i[pushed_place] = "current";
+	    collider_location = animal_location_string_array_i.indexOf(animals[animal_index].slice(0,3).toString())
+	    collider = animals[collider_location].slice();
+	    if(collider[3] == 1) {
+		// case 1 another wolf --> avoid collision
+		//animals[i] = prev_place; // move taken back
+		animals.pop();
+	    }else{
+		// case sheep, replace sheep
+		animals.pop(collider_location);
+	    }
 	}
     }
     
@@ -322,7 +345,7 @@ function do_turn() {
 	animals[i][xyz_choice] = get_prospect_placement_from(animals[i], xyz_choice);
 	var animal_location_string_array = []
 	for(let j = 0; j < animals.length; j++){
-	    animal_location_string_array[j] = animals[j].slice(0,cubeSideLength).toString();
+	    animal_location_string_array[j] = animals[j].slice(0,3).toString();
 	}
 	if(hasDuplicates(animal_location_string_array)){ // some kind of animal collision
 	    if(animals[i][3] == 0 ){ // sheep avoids collision with sheep or wolf 
@@ -330,11 +353,11 @@ function do_turn() {
 	    }
 	    else if(animals[i][3] == 1){ // a wolf is colliding with something.
 		animal_location_string_array[i] = "current";
-		collider_location = animal_location_string_array.indexOf(animals[i].slice(0,cubeSideLength).toString())
+		collider_location = animal_location_string_array.indexOf(animals[i].slice(0,3).toString())
 		collider = animals[collider_location].slice();
 
 
-		if(collider[cubeSideLength] == 1) {
+		if(collider[3] == 1) {
 		    // case 1 another wolf --> avoid collision
 		    animals[i] = prev_place; // move taken back
 		}
@@ -342,28 +365,28 @@ function do_turn() {
 		    // case 2 sheep --> eat sheep
 		    console.log("eating sheep");
 		    wolf = animals[i]; // pass by ref
-		    wolf[cubeSideLength + 1] += 1; // wolf eat count +
-		    wolf[cubeSideLength + 2] = 0;  // wolf satiated
+		    wolf[4] += 1; // wolf eat count +
+		    wolf[5] = 0;  // wolf satiated
 
 		    animals.splice(collider_location, 1); // removing sheep
 		    continue
 		}
 	    }
 	} // --- close of hasDuplicates
-	if(animals[i][cubeSideLength] == 1){
-	    animals[i][cubeSideLength + 2] += 1; // hungering the wolf
-	    if(animals[i][cubeSideLength + 2] > wolfTurns2hunger ){
+	if(animals[i][3] == 1){
+	    animals[i][5] += 1; // hungering the wolf
+	    if(animals[i][5] > wolfTurns2hunger ){
 		console.log("A wolf starved");
 		animals.pop(i);
 		continue
 	    }
-	    if(animals[i][cubeSideLength + 1] % wolfSheep2Repr == 0 && animals[i][cubeSideLength +1] != 0){
-		reprodAnimalFrom(animals[i]);
+	    if(animals[i][4] % wolfSheep2Repr == 0 && animals[i][4] != 0){
+		reprodAnimalFrom(i); // reproduce wolf
 	    } 
 	}
 	// reproduce sheep
-	if(turn % sheepTurns2Repr == 0 && animals[i][cubeSideLength] == 0){
-	    reprodAnimalFrom(animals[i]);
+	if(turn % sheepTurns2Repr == 0 && animals[i][3] == 0){
+	    reprodAnimalFrom(i);
 	}
     } // for loop
 }
@@ -383,14 +406,25 @@ function render()
     draw_grid(mv);
     requestAnimFrame( render );
 
+    
     // deal with animals
         for ( var i = 0; i < animals.length; ++i ) {
-	    mvs1 = mult( mv, scalem( 0.13333, 0.13333, 0.13333 ) );
+	    var animal_scale = cubeSideLength - 1;
+	    translation = cubeSideLength - 1;
+	    tr_extra = -(0.5 * Math.pow(cubeSideLength, 2.0) - 2 * cubeSideLength + 1.5);
+	    mvs1 = mult(
+		mv, scalem(
+		    1.0 / (cubeSideLength * animal_scale),
+		    1.0 / (cubeSideLength * animal_scale),
+		    1.0 / (cubeSideLength * animal_scale))
+	    );
+
 	    mvs = mult(mvs1, translate(
-		(animals[i][0] - 1.0) * 2.5 ,
-		(animals[i][1] - 1.0) * 2.5 ,
-		(animals[i][2] - 1.0) * 2.5
+		((parseInt(animals[i][0], cubeSideLength) - 1.0) * translation) + tr_extra,
+		((parseInt(animals[i][1], cubeSideLength) - 1.0) * translation) + tr_extra,
+		((parseInt(animals[i][2], cubeSideLength) - 1.0) * translation) + tr_extra
 	    ))
+
 	    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvs));
 	    if(animals[i][3] == 0){
 		gl.uniform4fv( locColor, flatten(colorC) );
@@ -399,120 +433,22 @@ function render()
 	    }
 	    gl.drawArrays( gl.LINES, 0, NumVertices );
     }
-	    
-
 }
 
 function draw_grid(mv){
     gl.uniformMatrix4fv(matrixLoc, false, flatten(mv));
-
     gl.uniform4fv( locColor, flatten(colorE) );
-
-    
     gl.drawArrays( gl.LINES, 0, NumVertices );
 
-    
-    // middle box
-    mv = mult( mv, scalem( 0.33333, 0.33333, 0.33333 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
+    mvg1 = mult( mv, scalem( 1.0/cubeSideLength, 1.0/cubeSideLength, 1.0/cubeSideLength ) );
 
-    // x side middle box
-    mv2 = mult( mv, translate( 1.0, 0.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv2));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
+    var gtrans = (cubeSideLength - 1.0)/ 2.0;
+    for(i=0;i < grid_list.length; i++){
+	mv2 = mult( mvg1, translate( parseInt(grid_list[i][0], cubeSideLength) - gtrans, parseInt(grid_list[i][1], cubeSideLength) - gtrans, parseInt(grid_list[i][2], cubeSideLength) - gtrans ) );
+	gl.uniformMatrix4fv(matrixLoc, false, flatten(mv2));
+	gl.drawArrays( gl.LINES, 0, NumVertices );
+    }
 
-    // -x side middle box
-    mv3 = mult( mv, translate( -1.0, 0.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv3));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // y side middle box
-    mv4 = mult( mv, translate( 0.0, 1.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv4));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // -y side middle box
-    mv5 = mult( mv, translate( 0.0, -1.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv5));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    //--------------------------------------------------
-
-    // x side middle box + y
-    mv6 = mult( mv, translate( 1.0, 1.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv6));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-    
-    // x side middle box - y
-    mv7 = mult( mv, translate( 1.0, -1.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv7));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // -x side middle box + y
-    mv8 = mult( mv, translate( -1.0, 1.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv8));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // -x side middle box - y
-    mv9 = mult( mv, translate( -1.0, -1.0, 0.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv9));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    //--------------------------------------------------
-
-    // z +
-    mvz = mult( mv, translate( 0.0, 0.0, 1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // z -
-    mvz = mult( mv, translate( 0.0, 0.0, -1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-    
-    // z +
-    mvz = mult( mv2, translate( 0.0, 0.0, 1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // z -
-    mvz = mult( mv2, translate( 0.0, 0.0, -1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // z +
-    mvz = mult( mv3, translate( 0.0, 0.0, 1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // z -
-    mvz = mult( mv3, translate( 0.0, 0.0, -1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // z +
-    mvz = mult( mv4, translate( 0.0, 0.0, 1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // z -
-    mvz = mult( mv4, translate( 0.0, 0.0, -1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    // z +
-    mvz = mult( mv5, translate( 0.0, 0.0, 1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-
-    
-    // z -
-    mvz = mult( mv5, translate( 0.0, 0.0, -1.0 ) );
-    gl.uniformMatrix4fv(matrixLoc, false, flatten(mvz));
-    gl.drawArrays( gl.LINES, 0, NumVertices );
-    
-    
 
 }
 

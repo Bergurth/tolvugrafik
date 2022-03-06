@@ -43,12 +43,17 @@ main()
     <div class="col-md-1"></div>
     <div class="col-md-2">
 <div class="slidecontainer">
+    <label for="gridsize" style="color: blue;">Grid Size:</label><em id="gridsizedisplay">5</em><br>
+  <input type="range" min="3" max="10" value="5" class="slider" id="gridsize">
+</div>
+
+<div class="slidecontainer">
     <label for="turnduration" style="color: blue;">Turn Duration:</label><em id="turndurationdisplay">2000</em><br>
   <input type="range" min="50" max="5000" value="2000" class="slider" id="turnduration">
 </div>
   <div class="slidecontainer">
     <label for="sheepnumber" style="color: blue;">Number of sheep:</label><em id="sheepnumberdisplay">15</em><br>
-  <input type="range" min="1" max="26" value="15" class="slider" id="sheepnumber">
+  <input type="range" min="1" max="124" value="55" class="slider" id="sheepnumber">
   </div>
   <div class="slidecontainer">
     <label for="sheeprep" style="color: blue;">Turns b4 sheep reproduction:</label><em id="sheeprepdisplay">2</em><br>
@@ -58,7 +63,7 @@ main()
   
   <div class="slidecontainer">
         <label for="wolfnumber" style="color: blue;">Number of wolves:</label><em id="wolfnumberdisplay">2</em><br>
-  <input type="range" min="1" max="26" value="2" class="slider" id="wolfnumber">
+  <input type="range" min="1" max="124" value="4" class="slider" id="wolfnumber">
 </div>
   <div class="slidecontainer">
         <label for="wolfhunger" style="color: blue;">Turns to wolf hunger:</label><em id="wolfhungerdisplay">4</em><br>
