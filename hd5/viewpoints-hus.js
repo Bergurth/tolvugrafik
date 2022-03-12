@@ -34,6 +34,13 @@ var carXPos = 100.0;
 var carYPos = 0.0;
 var height = 0.0;
 
+// for free flow viewpoint
+var spinX = 0.0;
+var spinY = 0.0;
+var x_direction = 0.0;
+var cameraX = 0.0;
+var cameraY = 0.0;
+
 // current viewpoint
 var view = 1;
 
@@ -136,6 +143,15 @@ window.onload = function init()
     document.getElementById("Viewpoint").innerHTML = "1: Fjarlægt sjónarhorn";
     document.getElementById("Height").innerHTML = "Viðbótarhæð: "+ height;
 
+    var canvasWidth = canvas.width;
+    
+    canvas.addEventListener("mousemove", function(e){
+	x_direction = ((2.0 * e.offsetX)/canvasWidth) - 1.0; // e [-1,1]
+
+	spinX = - (x_direction * 9.0) % 360;
+
+    } );
+    
     // Event listener for keyboard
     window.addEventListener("keydown", function(e){
         switch( e.keyCode ) {
@@ -181,13 +197,19 @@ window.onload = function init()
 	        document.getElementById("Viewpoint").innerHTML = "9: Fyrir ofan hús";
 	        break;
 
-	    
-            case 38:    // up arrow
+
+	    case 38:    // w
+            case 87:    // up arrow
                 height += 2.0;
+	        cameraX = cameraX + 2.0 * Math.cos(spinX);
+	        cameraY = cameraY + 2.0 * Math.sin(spinX);
                 document.getElementById("Height").innerHTML = "Viðbótarhæð: "+ height;
                 break;
-            case 40:    // down arrow
+	    case 40:    // s
+            case 83:    // down arrow
                 height -= 2.0;
+	        cameraX = cameraX - 2.0 * Math.cos(spinX);
+	        cameraY = cameraY - 2.0 * Math.sin(spinX);
                 document.getElementById("Height").innerHTML = "Viðbótarhæð: "+ height;
                 break;
 	    
@@ -372,7 +394,14 @@ function render()
 	    mv = mult( mv, rotateZ( -carDirection ) ) ;
 	    drawCar( mv );
 	    break;
-	    
+        case 10:
+	mv = lookAt( vec3(parseInt(cameraX), parseInt(cameraY), 5.0), vec3(Math.cos(spinX) * 400.0, Math.sin(spinX) * 400.0, 0.0), vec3(0.0, 0.0, 1.0 ) );
+	    drawScenery( mv );
+	    mv = mult( mv, translate(carXPos, carYPos, 0.0) );
+	    mv = mult( mv, rotateZ( -carDirection ) ) ;
+	    drawCar( mv );
+
+	
     }
     
     
