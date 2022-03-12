@@ -35,6 +35,8 @@ uniform vec4 ambientProduct;
 uniform vec4 diffuseProduct;
 uniform vec4 specularProduct;
 uniform float shininess;
+uniform bool phong;
+
 varying vec3 N, L, E;
 
 void main()
@@ -42,13 +44,19 @@ void main()
     vec4 fColor;
 
     vec3 H = normalize( normalize(L) + normalize(E) );
-    // vec3 R = 2 * dot(normalize(L), normalize(N)) * normalize(N) - normalize(L) 
+    vec3 R = reflect(-L, N);      // Reflected light vector
+
+    vec3 E2 = N;
+    vec3 R2 = H;
+    if(phong) E2 = E; R2 = R;
+
     vec4 ambient = ambientProduct;
 
     float Kd = max( dot(normalize(L), normalize(N)), 0.0 );
     vec4  diffuse = Kd*diffuseProduct;
 
-    float Ks = pow( max(dot(normalize(N), H), 0.0), shininess );
+    // float Ks = pow( max(dot(normalize(N), H), 0.0), shininess );
+    float Ks = pow( max(dot(normalize(E2), R2), 0.0), shininess );
     vec4  specular = Ks * specularProduct;
 
     if( dot(normalize(L), normalize(N)) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
@@ -72,10 +80,10 @@ void main()
     <td> <button id = "btnIncrease">Increase Subdivisions</button> </td>
     <td> <button id = "btnDecrease">Decrease Subdivisions</button> </td>
     <td>
-      <input type="radio" id="html" name="model-type" value="Phong">
-<label for="html">Phong</label><br>
-<input type="radio" id="css" name="model-type" value="Blin-Phong" checked>
-<label for="css">Blin-Phong</label><br>
+      <input type="radio" id="phong" name="model-type" value="Phong">
+      <label for="html">Phong</label><br>
+      <input type="radio" id="blin-phong" name="model-type" value="Blin-Phong" checked>
+      <label for="css">Blin-Phong</label><br>
     </td>
     <td> <center>Number of subdivisions: <div id="Subdivisions">3</div>
                  Number of vertices: <div id="NrVertices"></div></center></td>

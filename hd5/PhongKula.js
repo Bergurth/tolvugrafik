@@ -53,7 +53,9 @@ var normalMatrix, normalMatrixLoc;
 var eye;
 var at = vec3(0.0, 0.0, 0.0);
 var up = vec3(0.0, 1.0, 0.0);
-    
+
+var phong = false;
+
 function triangle(a, b, c) {
      
      pointsArray.push(a);
@@ -164,6 +166,8 @@ window.onload = function init() {
     gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition) );
     gl.uniform1f( gl.getUniformLocation(program, "shininess"), materialShininess );
 
+    gl.uniform1f( gl.getUniformLocation(program, "phong"), phong);
+    
     //event listeners for mouse
     canvas.addEventListener("mousedown", function(e){
         movement = true;
@@ -201,7 +205,19 @@ window.onload = function init() {
         normalsArray = [];
         init();
     };
+    
+    document.getElementById("phong").onclick = function(e){
+	console.log("phong");
+	phong = true;
+	gl.uniform1f( gl.getUniformLocation(program, "phong"), phong);
+    };
+    document.getElementById("blin-phong").onclick = function(e){
+	console.log("blin-phong");
+	phong = false;
+	gl.uniform1f( gl.getUniformLocation(program, "phong"), phong);
+    };
 
+    
 
     // Event listener for mousewheel
      window.addEventListener("wheel", function(e){
