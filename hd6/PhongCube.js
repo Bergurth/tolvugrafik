@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////
 //    Sýnidæmi í Tölvugrafík
-//     Kúla sem lituð er með flatri litun.  Hægt að snúa henni
+//     Kubbur sem lituð er með Blinn-Phong litun.  Hægt að snúa henni
 //   
 //
 //   
@@ -27,11 +27,6 @@ var fovy = 50.0;
 var near = 0.2;
 var far = 100.0;
 
-var va = vec4(0.0, 0.0, -1.0,1);
-var vb = vec4(0.0, 0.942809, 0.333333, 1);
-var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-var vd = vec4(0.816497, -0.471405, 0.333333,1);
-    
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -56,21 +51,24 @@ var up = vec3(0.0, 1.0, 0.0);
 
 
 function triangle(a, b, c) {
+    console.log("calling triangle");
+    console.log(a);
+    console.log(b);
+    console.log(c);
+    var t1 = subtract(b, a);
+    var t2 = subtract(c, a);
+    var normal = normalize(cross(t2, t1));
+    normal = vec4(normal);
 
-     var t1 = subtract(b, a);
-     var t2 = subtract(c, a);
-     var normal = normalize(cross(t2, t1));
-     normal = vec4(normal);
-
-     normalsArray.push(normal);
-     normalsArray.push(normal);
-     normalsArray.push(normal);
+    normalsArray.push(normal);
+    normalsArray.push(normal);
+    normalsArray.push(normal);
      
-     pointsArray.push(a);
-     pointsArray.push(b);      
-     pointsArray.push(c);
+    pointsArray.push(a);
+    pointsArray.push(b);      
+    pointsArray.push(c);
 
-     index += 3;
+    index += 3;
 }
 
 function colorCube()
@@ -86,52 +84,26 @@ function colorCube()
 
 function quad(a, b, c, d)
 {
+    console.log("quad called");
+    console.log(a);
+    console.log(b);
+    console.log(c);
+    console.log(d);
     var vertices = [
-        vec3( -0.5, -0.5,  0.5, 1.0 ),
-        vec3( -0.5,  0.5,  0.5, 1.0 ),
-        vec3(  0.5,  0.5,  0.5, 1.0 ),
-        vec3(  0.5, -0.5,  0.5, 1.0 ),
-        vec3( -0.5, -0.5, -0.5, 1.0 ),
-        vec3( -0.5,  0.5, -0.5, 1.0 ),
-        vec3(  0.5,  0.5, -0.5, 1.0 ),
-        vec3(  0.5, -0.5, -0.5, 1.0 )
+        vec4( -0.5, -0.5,  0.5, 1.0 ),
+        vec4( -0.5,  0.5,  0.5, 1.0 ),
+        vec4(  0.5,  0.5,  0.5, 1.0 ),
+        vec4(  0.5, -0.5,  0.5, 1.0 ),
+        vec4( -0.5, -0.5, -0.5, 1.0 ),
+        vec4( -0.5,  0.5, -0.5, 1.0 ),
+        vec4(  0.5,  0.5, -0.5, 1.0 ),
+        vec4(  0.5, -0.5, -0.5, 1.0 )
     ];
     var indices = [ a, b, c, a, c, d ]; 
     triangle(vertices[a],vertices[b],vertices[c]);
     triangle(vertices[a],vertices[c],vertices[d]);
 }
 
-
-/*
-function divideTriangle(a, b, c, count) {
-    if ( count > 0 ) {
-                
-        var ab = mix( a, b, 0.5);
-        var ac = mix( a, c, 0.5);
-        var bc = mix( b, c, 0.5);
-                
-        ab = normalize(ab, true);
-        ac = normalize(ac, true);
-        bc = normalize(bc, true);
-                                
-        divideTriangle( a, ab, ac, count - 1 );
-        divideTriangle( ab, b, bc, count - 1 );
-        divideTriangle( bc, c, ac, count - 1 );
-        divideTriangle( ab, bc, ac, count - 1 );
-    }
-    else { 
-        triangle( a, b, c );
-    }
-}
-*/
-/*
-function tetrahedron(a, b, c, d, n) {
-    divideTriangle(a, b, c, n);
-    divideTriangle(d, c, b, n);
-    divideTriangle(a, d, b, n);
-    divideTriangle(a, c, d, n);
-}
-*/
 window.onload = function init() {
 
     canvas = document.getElementById( "gl-canvas" );
@@ -155,12 +127,6 @@ window.onload = function init() {
     ambientProduct = mult(lightAmbient, materialAmbient);
     diffuseProduct = mult(lightDiffuse, materialDiffuse);
     specularProduct = mult(lightSpecular, materialSpecular);
-
-
-    //tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
-
-    //document.getElementById("Subdivisions").innerHTML = numTimesToSubdivide;
-    //document.getElementById("NrVertices").innerHTML = index;
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
@@ -211,23 +177,6 @@ window.onload = function init() {
         }
     } );
 
-    /*
-    document.getElementById("btnIncrease").onclick = function(){
-        if( numTimesToSubdivide < 7 ) numTimesToSubdivide++;
-        index = 0;
-        pointsArray = []; 
-        normalsArray = [];
-        init();
-    };
-    document.getElementById("btnDecrease").onclick = function(){
-        if( numTimesToSubdivide > 0 ) numTimesToSubdivide--;
-        index = 0;
-        pointsArray = []; 
-        normalsArray = [];
-        init();
-    };
-    */
-
     // Event listener for mousewheel
      window.addEventListener("wheel", function(e){
          if( e.deltaY > 0.0 ) {
@@ -262,8 +211,7 @@ function render() {
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
         
-    //gl.drawArrays( gl.TRIANGLES, 0, index );
-    gl.drawArrays( gl.TRIANGLES, 0, 27 );
+    gl.drawArrays( gl.TRIANGLES, 0, index );
 
     window.requestAnimFrame(render);
 }
