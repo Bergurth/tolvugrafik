@@ -9,6 +9,13 @@ var gl;
 
 var numVertices  = 36;
 
+var texCoordsArray = [];
+
+var texture;
+var texImg;
+
+var texCoords = []
+
 var points = [];
 var colors = [];
 
@@ -19,6 +26,14 @@ var origX;
 var origY;
 
 var matrixLoc;
+
+var colornow = false;
+
+// Mynsturhnit fyrir spjaldið
+
+var program;
+var image1;
+
 
 window.onload = function init()
 {
@@ -37,7 +52,7 @@ window.onload = function init()
     //
     //  Load shaders and initialize attribute buffers
     //
-    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
+    program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
     
     var cBuffer = gl.createBuffer();
@@ -58,6 +73,17 @@ window.onload = function init()
 
     matrixLoc = gl.getUniformLocation( program, "rotation" );
 
+    
+    var tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoords), gl.STATIC_DRAW );
+    
+    var vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
+    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vTexCoord );
+    
+    gl.uniform1f( gl.getUniformLocation(program, "colornow"), colornow);
+    
     //event listeners for mouse
     canvas.addEventListener("mousedown", function(e){
         movement = true;
@@ -99,10 +125,14 @@ function quad(a, b, c, d)
         vec3( -0.5,  0.5,  0.5 ),
         vec3(  0.5,  0.5,  0.5 ),
         vec3(  0.5, -0.5,  0.5 ),
+
+	
+
         vec3( -0.5, -0.5, -0.5 ),
         vec3( -0.5,  0.5, -0.5 ),
         vec3(  0.5,  0.5, -0.5 ),
         vec3(  0.5, -0.5, -0.5 )
+
     ];
 
     var vertexColors = [
@@ -116,6 +146,14 @@ function quad(a, b, c, d)
         [ 1.0, 1.0, 1.0, 1.0 ]   // white
     ];
 
+    var texCo = [
+        vec2(0, 0),
+        vec2(0, 1),
+        vec2(1, 1),
+        vec2(1, 0)
+    ];
+
+    
     // We need to parition the quad into two triangles in order for
     // WebGL to be able to render it.  In this case, we create two
     // triangles from the quad indices
@@ -123,11 +161,13 @@ function quad(a, b, c, d)
     //vertex color assigned by the index of the vertex
     
     var indices = [ a, b, c, a, c, d ];
+    var texind  = [ 1, 0, 3, 1, 3, 2 ];
 
+    
     for ( var i = 0; i < indices.length; ++i ) {
         points.push( vertices[indices[i]] );
         colors.push(vertexColors[a]);
-        
+        texCoords.push( texCo[texind[i]] );
     }
 }
 
@@ -138,18 +178,48 @@ function render()
 
     var mv = mat4(); // identity matrix
 
+    
+
+    
     mv = mult( mv, rotateX(spinX) );
     mv = mult( mv, rotateY(spinY) ) ;
 
     // Build the computer screen...
-    //mv1 = mult( mv1, translate( 0.0, 0.1, 0.0 ) );
+
     mv1 = mult( mv, scalem( 1.0, 0.8, 0.1 ) );
     mv1 = mult( mv1, translate( 0.0, 0.3, 0.0 ) );
-    // gl.uniformMatrix4fv(matrixLoc, false, flatten(mv1));
-    //gl.uniformMatrix4fv(matrixLoc, false, flatten(mv1));
+
     gl.uniformMatrix4fv(matrixLoc, false, flatten(mv1));
     gl.drawArrays( gl.TRIANGLES, 0, numVertices );
 
+    colornow = false;
+    gl.uniform1f( gl.getUniformLocation(program, "colornow"), colornow);
+
+    image1 = document.getElementById("texImage")
+
+    texImg = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, texImg );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image1 );
+
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR );
+    
+    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+
+
+    
+    // actual screen
+    mv2 = mult(mv, scalem(0.9, 0.75, 0.05));
+    mv2 = mult(mv2, translate( 0.0, 0.325, -0.7));
+    gl.uniformMatrix4fv(matrixLoc, false, flatten(mv2));
+    gl.drawArrays( gl.TRIANGLES, 0, numVertices );
+    
+    colornow = true;
+    gl.uniform1f( gl.getUniformLocation(program, "colornow"), colornow);
+
+    
     // Then the column
     mv1 = mult( mv, translate( 0.0, -0.2, 0.0 ) );
     mv1 = mult( mv1, scalem( 0.1, 0.3, 0.1 ) );
