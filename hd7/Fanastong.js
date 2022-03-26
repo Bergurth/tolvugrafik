@@ -36,6 +36,11 @@ var poleBuffer;
 var flagBuffer;
 var flag_height = 1.0;
 
+var locTime;
+var iniTime;
+
+var flag = false;
+
 // Tveir þríhyrningar sem mynda spjald í z=0 planinu
 var vertices = [
     vec4( -1.25, -0.9, 0.0, 1.0 ),
@@ -94,6 +99,7 @@ function configureTexture( image, prog ) {
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
     */
 
+    
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -161,10 +167,17 @@ window.onload = function init() {
     
     gl.useProgram(program1);
     gl.uniformMatrix4fv(locProjection1, false, flatten(proj));
+    gl.uniform1f( gl.getUniformLocation(program1, "flag"), false);
     
     gl.useProgram(program2);
     gl.uniformMatrix4fv(locProjection2, false, flatten(proj));
-    
+
+
+    locTime = gl.getUniformLocation( program2, "time" );
+    iniTime = Date.now();
+
+    //gl.uniform1f( gl.getUniformLocation(program2, "flag"), flag);
+    gl.uniform1f( gl.getUniformLocation(program2, "flag"), true);
 
     //event listeners for mouse
     canvas.addEventListener("mousedown", function(e){
@@ -251,6 +264,14 @@ var render = function(){
 
     // teikna fánann með liturum 2
     gl.useProgram(program2);
+    //flag = true;
+    //gl.uniform1f( gl.getUniformLocation(program2, "flag"), flag);
+    //gl.uniform1f( gl.getUniformLocation(program1, "flag"), flag);
+    
+    var msek = Date.now() - iniTime;
+    //console.log(msek);
+    gl.uniform1f(gl.getUniformLocation(program2, "time"), msek );
+    
     //mv2 = mult( mv2, translate(0.16, 1.0, 0.0) );
     mv2 = mult( mv2, translate(0.16, flag_height, 0.0) ); // 1.0 .. -1.0
     mv2 = mult( mv2, scalem(0.5, 0.5, 0.5) );
@@ -261,5 +282,10 @@ var render = function(){
 
     gl.drawArrays( gl.TRIANGLES, 0, numFlagVertices );
 
+    //flag = false;
+    //gl.uniform1f( gl.getUniformLocation(program2, "flag"), flag);
+    //gl.uniform1f( gl.getUniformLocation(program1, "flag"), flag);
+
+    
     requestAnimFrame(render);
 }

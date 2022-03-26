@@ -11,10 +11,25 @@
 attribute  vec4 vPosition;
 uniform mat4 projection;
 uniform mat4 modelview;
+uniform float time;
+uniform bool flag;
 
 void main()
 {
-      gl_Position = projection * modelview * vPosition;
+     if(flag) {
+     vec4 t = vPosition;
+     t.y += 0.2*sin(0.01*time + 2.0*t.x); 
+     //t.y += 100.5*sin(0.5*time + 2.0*t.x);
+     t.z += 0.2*sin(0.005*time + 2.0*t.x);
+     //t.z += 100.5*sin(0.5*time + 2.0*t.x);
+
+     gl_Position = projection * modelview * t;
+     //gl_Position = vPosition;
+     }
+     if(!flag){
+     gl_Position = projection * modelview * vPosition;
+     }
+
 
   }
 </script>
@@ -76,6 +91,12 @@ void main()
 <canvas id="gl-canvas" width="512" height="512">
 Oops ... your browser doesn't support the HTML5 canvas element
 </canvas>
+
 <img id = "texImage" src = "biafra.jpg" hidden></img>
+
+
+<!--
+<img id = "texImage" src = "laurel.jpg" hidden></img>
+-->
 </body>
 </html>
