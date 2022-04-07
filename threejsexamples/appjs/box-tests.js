@@ -28,30 +28,57 @@
             box.add(axes);
             camera.lookAt(box);
 
-            var map1 = [[0,0]
-            			,[0,1],[1,1],[1,2],[1,3],[1,4],
-            			[1,5],[2,5],[3,5],[4,5],[5,5],[5,4],
-            [-3,3],	[-2,3],[-1,3],[0,3],[2,3],[3,3],[4,3],[5,3],
-            [1,0], [2,0], [3,0], [4,0], [5,0], [5,1], [5,2],
-            [3,1], [3,2],
-			[-3,5],[-2,5],[-1,5],[0,5],
-			[-3,4],[-3,2],[-3,1],
-			[-2,1],[-1,1],[0,1],
-			[-3,0],
-			[0,-1],[0,-2],[0,-3],[0,-4],
-			[1,-4],[2,-4],[3,-4],[4,-4],[5,-4],
-			[5,-3],[5,-2],[5,-1],
-			[1,-2],[2,-2],[3,-2],[4,-2],
-			[0,-2],[-1,-2],[-2,-2],[-3,-2],
-			[-3,-1],
-			[-3,-2],[-3,-3],[-3,-4],
-			[-2,-4],[-1,-4]
-            ]
+   			// grid should be square
+            grid = [  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XX....X.....................XX',
+					  'XX.XX.X.XX.XXXX.XXXX.XXXXXX.XX',
+					  'XX.XX.X.XX.XXXX.XXXX.XXXXXX.XX',
+					  'XX.XX.X.XX.X............XX..XX',
+					  'XX...........XXXXXXXXXX....XXX',
+					  'XX.XXXXX.XXX.XXXXX......XX..XX',
+					  'XX.XXXXX.XXX....XX.XXXX....XXX',
+					  'XX.XXXXX...XXXX.XX.XXXX.XX.XXX',
+					  'XX.......X..............XX.XXX',
+					  'XXXXX.XXXX.XXXX.XXX.XXX.XX.XXX',
+					  'XXX.....XX..XXX.XXX.XXX.XX.XXX',
+					  'XX..XXX.XXX..........XX..X..XX',
+					  'XX.XX.....X.XXX.XX.XXXXX.XX.XX',
+					  'XX.XX.X.XXX.XXX.XX...........X',
+					  'XX.XX.X.XXX.XXX.XX.XXXXX.XXX.X',
+					  'XX....X.....XXX..............X',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+					  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' ]
 
+			middle_z = grid[0].length/2;
+			middle_x = grid.length/2;
+			map1 = []
+			for(let i = grid.length -1; i > -1; i--){
+				console.log(i);
+				for(let j = grid.length -1 ; j > -1; j--){
+					if(grid[i][j] !== 'X'){
+						map1.push([i - middle_x, j - middle_z])	
+					}
+					
+				}
+			}
+            
             function addmap(scene, map, tile){ // tile is the obj to clone from
+            	var map_grid = {};
             	tilewidth = tile.geometry.parameters['width'];
             	tiles = []
             	for(let i = 0; i < map.length; i++){
+
             		tile[i] = box.clone();
             		tile[i].position.set(map[i][0] * tilewidth, 0, map[i][1] * tilewidth);
             		scene.add(tile[i]);
