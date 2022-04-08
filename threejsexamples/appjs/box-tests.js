@@ -1,5 +1,6 @@
 
 var PAC_SPEED = 25;
+var SKULL_SPEED = 15;
 var X_DIRECTION = new THREE.Vector3(1, 0, 0);
 var MINUS_X_DIRECTION = new THREE.Vector3(-1, 0, 0);
 var Z_DIRECTION = new THREE.Vector3(0,0,1);
@@ -9,7 +10,7 @@ var Y_DOWN_DIRECTION = new THREE.Vector3(0,-1,0);
 var PACMAN_RAD = 4;
 
 // Helpers
-var TILE_HELPERS = false;
+var TILE_HELPERS = true;
 var PACMAN_HELPERS = false;
 var ORIGIN_HELPERS = true;
 var LIGHT_HELPERS = true;
@@ -55,7 +56,7 @@ grid = [  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
 		  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
 		  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
 		  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-		  'XX....X.................S...XX',
+		  'XX....X.....................XX',
 		  'XX.XX.X.XX.XXXX.XXXX.XXXXXX.XX',
 		  'XX.XX.X.XX.XXXX.XXXX.XXXXXX.XX',
 		  'XX.XX.X.XX.X............XX..XX',
@@ -66,8 +67,8 @@ grid = [  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
 		  'XX.......X..P...........XX.XXX',
 		  'XXXXX.XXXX.XXXX.XXX.XXX.XX.XXX',
 		  'XXX.....XX..XXX.XXX.XXX.XX.XXX',
-		  'XX..XXX.XXX.....S....XX..X..XX',
-		  'XX.XX.S...X.XXX.XX.XXXXX.XX.XX',
+		  'XX..XXX.XXX..........XX..X..XX',
+		  'XX.XX.....X.XXX.XX.XXXXX.XX.XX',
 		  'XX.XX.X.XXX.XXX.XX...........X',
 		  'XX.XX.X.XXX.XXX.XX.XXXXX.XXX.X',
 		  'XX....X.....XXX..............X',
@@ -115,6 +116,8 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 // pacman = addmap(scene, grid, box);
 // let[pacman, skulls, ... ] = addmap(scene, grid, box);
 let[pacman, tilewidth, skulls] = addmap(scene, grid, box);
+
+var half_tile = Math.round(tilewidth / 2.0);
 
 // utility functions
 var grid_to_game = function (pos) {
@@ -210,7 +213,7 @@ var forward = new THREE.ArrowHelper(
 if(PACMAN_HELPERS){
 	pacman.add(forward);
 }
-//pacman.add(pac_forward_vec); // not neccesary
+// pacman.add(pac_forward_vec);
 
 
 // ARROW HELPER 3
@@ -256,7 +259,7 @@ function add_pacman(x_position, z_position){
 	pac_obj.add(black_pac);
 	pac_obj.position.set(x_position,5,z_position); // This works
 	pac_obj.rotation.x = (Math.PI / 2);
-	pac_obj.direction = new THREE.Vector3(1, 0, 0); // not working yet
+	pac_obj.direction = new THREE.Vector3(2, 0, 0).normalize(); // not working yet
 	// const arrowHelper = new THREE.ArrowHelper( pac_obj.direction, pac_obj, 50 );
 	// scene.add( arrowHelper );
 
@@ -278,12 +281,16 @@ function add_skull(x_position, z_position){
                 skull.scale['x'] = 0.3;
                 skull.scale['y'] = 0.3;
                 skull.scale['z'] = 0.3;
-                //skull_obj.add(skull);
-                //skull_obj.isSkull = true;
+                skull_obj.add(skull);
+                skull_obj.isSkull = true;
                 skull.isSkull = true;
                 //skull.add(skull_forward);
                 //scene.add(skull_obj);
-                scene.add(skull);
+
+                //skull.direction = new THREE.Vector3(0,-2,0).normalize();
+                //skull.direction = new THREE.Vector3(0,0,-2).normalize();
+                skull_obj.direction = new THREE.Vector3(0,0,2).normalize();
+                scene.add(skull_obj);
                 return skull;
               });
             });
@@ -313,7 +320,8 @@ function update_pacman(delta){
 
     if(keys_pressed['87']){ // w
 
-		pacman.translateOnAxis(pac_forward_vec, PAC_SPEED * delta); // change to pac-direction
+		//pacman.translateOnAxis(pac_forward_vec, PAC_SPEED * delta); // change to pac-direction
+		pacman.translateOnAxis(pac_forward_vec, PAC_SPEED * delta);
 
 		var correction_delta = PACMAN_RAD 
 
@@ -346,6 +354,8 @@ function update_pacman(delta){
 
 	// check for skull collision
 	scene.children.forEach(function(object){
+		console.log(typeof object);
+		console.dir(object);
 		if(object.isSkull === true){
 			//console.log(object.position)
 			if(distance(pacman, object) < correction_delta){
@@ -359,9 +369,115 @@ function update_pacman(delta){
 
 } // update_pacman
 
-function update_skull(delta){
+function update_skulls(delta){
+	scene.children.forEach(function(object){
+		if(object.isSkull === true){
+			update_skull(object, delta);
+		}
+	})
 
-} // update_skull
+
+} // update_skulls
+
+function update_skull(skull, delta){
+	// console.log(typeof skull); // object
+	// console.dir(skull); // position
+	var former_location = new THREE.Vector3();
+	var new_location = new THREE.Vector3();
+	var turn_left = new THREE.Vector3();
+	var turn_right = new THREE.Vector3();
+
+	former_location.copy(skull.position) //.addScaledVector(skull.direction, 0.5).round();
+
+	//skull.translateOnAxis(skull.direction,  SKULL_SPEED * delta);
+
+	new_location.copy(skull.position) //.addScaledVector(skull.direction, 0.5).round();
+
+	var check_distance = half_tile + 0.5 ;
+
+	//console.dir(new_location);
+	var movement_options = []
+	// console.log(game_to_grid(former_location['z']));
+	// console.log(game_to_grid(new_location['z']));
+	// console.log("==========================================")
+
+	if(game_to_grid(former_location['z']) !== game_to_grid(new_location['z']) ||
+		game_to_grid(former_location['x']) !== game_to_grid(new_location['x'])){
+
+        turn_left.copy(skull.direction).applyAxisAngle(Y_UP_DIRECTION, Math.PI / 2);
+        turn_right.copy(skull.direction).applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2);
+
+		// transitioning between tiles
+		console.log("switchin")
+		console.log("skull position is ...")
+		console.log(skull.position)
+		console.log("skull direction")
+		console.log(skull.direction)
+
+		// var right = skull.position.clone().addScaledVector(X_DIRECTION, check_distance).round();
+	 //    var left = skull.position.clone().addScaledVector(MINUS_X_DIRECTION, check_distance).round();
+	 //    var bottom = skull.position.clone().addScaledVector(Z_DIRECTION, check_distance).round();
+	 //    var top = skull.position.clone().addScaledVector(MINUS_Z_DIRECTION, check_distance).round();
+
+
+
+
+
+	 //    if (!(inWall(grid, bottom))) {
+	 //    	movement_options.push(Z_DIRECTION);
+	 //    }
+	 //    if (!(inWall(grid, right))) {
+	 //    	movement_options.push(X_DIRECTION);
+	 //    }
+	 //    if (!(inWall(grid, top))) {
+	 //    	movement_options.push(MINUS_Z_DIRECTION);
+	 //    }
+	 //    if (!(inWall(grid, left))) {
+	 //    	movement_options.push(MINUS_X_DIRECTION);
+	 //    }
+
+	 	var bad_forward = inWall(grid, new_location);
+        var bad_left = inWall(grid, new_location.copy(skull.position).add(turn_left));
+        var bad_right = inWall(grid, new_location.copy(skull.position).add(turn_right));
+
+        if(! (bad_right && bad_left)){
+        	// a turn can be made
+        	movement_options = [];
+        	if(!bad_forward){ movement_options.push(skull.direction)};
+        	if(!bad_left){movement_options.push(turn_left)};
+        	if(!bad_right){movement_options.push(turn_right)};
+
+        }
+
+	    if(movement_options.length === 0){
+	    	throw new Error('Skull in trouble');
+	    }
+	    console.log("logging movement_options")
+	   	console.log(movement_options)
+		var newDirection = movement_options[Math.floor(Math.random() * movement_options.length)];
+		console.log(typeof newDirection)
+		console.log("Choosing this direction ....")
+		console.log(newDirection)
+	 	skull.direction.copy(newDirection);
+	 	//skull.position.round().addScaledVector(skull.direction, delta);
+
+
+	}
+	// if(game_to_grid(new_location['x']) !== game_to_grid(former_location['x']) ||
+	// 	game_to_grid(new_location['z'] !== game_to_grid(former_location['z']))){
+	// 	console.log("Switchinn");
+	// }
+
+
+	//if(new_location.equals(former_location)){console.log("PeeP")}
+
+	
+
+
+
+
+	//skull.translateOnAxis(skull.direction,  SKULL_SPEED * delta);
+}
 
 
 var prevTime = window.performance.now();
@@ -374,6 +490,7 @@ const animate = function () {
 	requestAnimationFrame( animate );
 	//console.log(timeDelta);
 	update_pacman(timeDelta);
+	update_skulls(timeDelta);
 
     controls.update();
 	renderer.render( scene, camera );
