@@ -1,6 +1,7 @@
 
 var PAC_SPEED = 20;
 var X_DIRECTION = new THREE.Vector3(1, 0, 0);
+var Y_UP_DIRECTION = new THREE.Vector3(0,1,0);
 
 // Ná í striga og skilgreina birti
 const canvas = document.querySelector('#c');
@@ -98,6 +99,7 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 pacman = addmap(scene, grid, box);
 // let[pacman, skulls, ... ] = addmap(scene, grid, box);
 //add_pacman(0,0);
+pacman.add(axes);
 
 // Ljósgjafinn er í miðri sólinni ( í (0, 0, 0) )
 const light = new THREE.PointLight( 0xFFFFFF, 3 );
@@ -148,7 +150,7 @@ function add_pacman(x_position, z_position){
 	pac_obj.add(black_pac);
 	pac_obj.position.set(x_position,5,z_position); // This works
 	pac_obj.rotation.x = (Math.PI / 2);
-	// pac_obj.direction = new THREE.Vector3(1, 0, 0); // not working yet
+	pac_obj.direction = new THREE.Vector3(1, 0, 0); // not working yet
 	// const arrowHelper = new THREE.ArrowHelper( pac_obj.direction, pac_obj, 50 );
 	// scene.add( arrowHelper );
 
@@ -193,10 +195,22 @@ var keys_pressed = function(){
 
 
 function update_pacman(delta){
+	var _lookAt = new THREE.Vector3();
+    //pacman.up.copy(pacman.direction).applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2);
+    //pacman.lookAt(_lookAt.copy(pacman.position).add(Y_UP_DIRECTION));
+
+    //console.log(pacman.direction); direction not changing
+    // perhaps try completely different approach to turning obj, and changing direction
 	if(keys_pressed['87']){ // w
 		//console.log("w pressed")
-		pacman.translateOnAxis(X_DIRECTION, PAC_SPEED * delta); // change to pac-direction
+		pacman.translateOnAxis(pacman.direction, PAC_SPEED * delta); // change to pac-direction
 	}
+    if (keys_pressed['65']) { // a
+        pacman.direction.applyAxisAngle(Y_UP_DIRECTION, Math.PI / 2 * delta);
+    }
+    if (keys_pressed['68']) { // d
+        pacman.direction.applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2 * delta);
+    }
 
 }
 
