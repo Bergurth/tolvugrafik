@@ -1,7 +1,12 @@
 
 var PAC_SPEED = 20;
 var X_DIRECTION = new THREE.Vector3(1, 0, 0);
+var MINUS_X_DIRECTION = new THREE.Vector3(-1, 0, 0);
+var Z_DIRECTION = new THREE.Vector3(0,0,1);
+var MINUS_Z_DIRECTION = new THREE.Vector3(0,0,-1);
 var Y_UP_DIRECTION = new THREE.Vector3(0,1,0);
+var Y_DOWN_DIRECTION = new THREE.Vector3(0,-1,0);
+var PACMAN_RAD = 4;
 
 // Ná í striga og skilgreina birti
 const canvas = document.querySelector('#c');
@@ -30,7 +35,7 @@ const boxMaterial = new THREE.MeshBasicMaterial({map:texture});
 const box = new THREE.Mesh(boxGeo, boxMaterial);
 
 const axes = new THREE.AxesHelper( 15 );
-//box.add(axes);
+box.add(axes);
 camera.lookAt(box);
 
 	// grid should be square
@@ -70,7 +75,7 @@ middle_x = grid.length/2;
 
 
 function addmap(scene, grid, tile){ // tile is the obj to clone from
-	tilewidth = tile.geometry.parameters['width'];
+	var tilewidth = tile.geometry.parameters['width'];
 	tiles = []
 	for(let i = grid.length -1; i > -1; i--){
 		for(let j = grid.length -1 ; j > -1; j--){
@@ -78,7 +83,7 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 				tiles.push([i - middle_x, j - middle_z]);
 			}
 			if(grid[i][j] === 'P'){
-				pacman = add_pacman((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
+				var pacman = add_pacman((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
 			}
 			if(grid[i][j] === 'S'){
 				add_skull((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
@@ -93,11 +98,37 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 		scene.add(tile[i]);
 	}
 
-	return pacman; // perhaps return array here of obj
+	return [pacman, tilewidth]; // perhaps return array here of obj
 }
 
-pacman = addmap(scene, grid, box);
+// pacman = addmap(scene, grid, box);
 // let[pacman, skulls, ... ] = addmap(scene, grid, box);
+let[pacman, tilewidth] = addmap(scene, grid, box);
+
+// utility functions
+var grid_to_game = function (pos) {
+	return (pos - middle_x) * tilewidth; 
+}
+
+var game_to_grid = function (pos) {
+	return Math.round(pos/tilewidth) + middle_x;
+}
+
+
+var get_cell = function (grid, position){
+	var x = Math.round(position['x']), 
+	    z = Math.round(position['z']);
+	return grid[game_to_grid(x)][game_to_grid(z)];
+
+}
+
+var inWall = function(grid, position){
+        var cell = get_cell(grid, position);
+        return cell === 'X';
+    };
+
+
+
 //add_pacman(0,0);
 pacman.add(axes);
 
@@ -123,6 +154,35 @@ scene.add( pointLightHelper );
 
 const pointLightHelper2 = new THREE.PointLightHelper( green_light, 1 );
 scene.add( pointLightHelper2 );
+
+
+// ARROW HELPER
+var up = new THREE.ArrowHelper(
+        // first argument is the direction
+        new THREE.Vector3(0, 2, 0).normalize(),
+        // second argument is the origin
+        new THREE.Vector3(0, 0, 0),
+        // length
+        20.2,
+        // color
+        0x00ff00);
+scene.add(up);
+
+// ARROW HELPER 2
+var pac_forward_vec = new THREE.Vector3(2, 0, 0).normalize()
+var forward = new THREE.ArrowHelper(
+        // first argument is the direction
+        pac_forward_vec,
+        // second argument is the origin
+        new THREE.Vector3(0, 0, 0),
+        // length
+        20.2,
+        // color
+        0xff0000);
+
+pacman.add(forward);
+pacman.add(pac_forward_vec);
+
 
 function add_pacman(x_position, z_position){
     const pac_obj = new THREE.Object3D();
@@ -196,20 +256,61 @@ var keys_pressed = function(){
 
 function update_pacman(delta){
 	var _lookAt = new THREE.Vector3();
-    //pacman.up.copy(pacman.direction).applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2);
-    //pacman.lookAt(_lookAt.copy(pacman.position).add(Y_UP_DIRECTION));
+    pacman.up.copy(pacman.direction).applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2);
+    pacman.lookAt(_lookAt.copy(pacman.position).add(Y_UP_DIRECTION));
 
+
+    //console.dir(pacman)
+    //console.log(get_cell(grid, pacman.position)); <------------works
     //console.log(pacman.direction); direction not changing
     // perhaps try completely different approach to turning obj, and changing direction
 	if(keys_pressed['87']){ // w
 		//console.log("w pressed")
-		pacman.translateOnAxis(pacman.direction, PAC_SPEED * delta); // change to pac-direction
+            // Check for collision with walls.
+	    //var left = pacman.position.clone().addScaledVector(X_DIRECTION, PACMAN_RAD).round();
+	    //var right = pacman.position.clone().addScaledVector(MINUS_X_DIRECTION, PACMAN_RAD).round();
+
+
+		pacman.translateOnAxis(pac_forward_vec, PAC_SPEED * delta); // change to pac-direction
+
+		var correction_delta = PACMAN_RAD 
+
+		// var right = pacman.position.clone().addScaledVector(X_DIRECTION, PAC_SPEED * delta).round();
+	 //    var left = pacman.position.clone().addScaledVector(MINUS_X_DIRECTION, PAC_SPEED * delta).round();
+	 //    var bottom = pacman.position.clone().addScaledVector(MINUS_Z_DIRECTION, PAC_SPEED * delta).round();
+	 //    var top =  pacman.position.clone().addScaledVector(Z_DIRECTION, PAC_SPEED * delta).round();
+
+		var right = pacman.position.clone().addScaledVector(X_DIRECTION, correction_delta).round();
+	    var left = pacman.position.clone().addScaledVector(MINUS_X_DIRECTION, correction_delta).round();
+	    var bottom = pacman.position.clone().addScaledVector(Z_DIRECTION, correction_delta).round();
+	    var top = pacman.position.clone().addScaledVector(MINUS_Z_DIRECTION, correction_delta).round();
+
+	    if (inWall(grid, left)) {
+	    	//console.log("hitting wall on left");
+	        pacman.position.x = left.x + 0.5 + correction_delta
+	    }
+	    if (inWall(grid, right)) {
+	    	//console.log("hitting wall on right");
+	        pacman.position.x = right.x - 0.5 - correction_delta
+	    }
+	    if (inWall(grid, top)) {
+	    	console.log("hitting wall on top");
+	        pacman.position.z = top.z + 0.5 + correction_delta
+	    }
+	    if (inWall(grid, bottom)) {
+	    	console.log("hitting wall on bottom");
+	        pacman.position.z = bottom.z - 0.5 - correction_delta
+	    }
 	}
     if (keys_pressed['65']) { // a
         pacman.direction.applyAxisAngle(Y_UP_DIRECTION, Math.PI / 2 * delta);
+        //console.log(forward);
+        //console.log(pac_forward_vec)
     }
     if (keys_pressed['68']) { // d
         pacman.direction.applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2 * delta);
+        //console.log(forward);
+        //console.log(pac_forward_vec)
     }
 
 }
