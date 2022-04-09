@@ -1,5 +1,6 @@
 
 var PAC_SPEED = 25;
+var PAC_ROT_SPEED = 3;
 var SKULL_SPEED = 15;
 var X_DIRECTION = new THREE.Vector3(1, 0, 0);
 var MINUS_X_DIRECTION = new THREE.Vector3(-1, 0, 0);
@@ -21,8 +22,11 @@ var SKULL_HELPERS = true;
 var SKULLS_MOVE = true;
 var SKULLS_VISIBLE = true;
 
+//var game_end_canvas = document.getElementById('game-end');
+
 // Ná í striga og skilgreina birti
 const canvas = document.querySelector('#c');
+const end_canvas = document.querySelector('#endgame');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 
 // Skilgreina myndavél og staðsetja hana
@@ -57,10 +61,13 @@ camera.lookAt(box);
 //var maps;
 
 // grid should be square
-grid = map1; // see maps.js
+grid = map1.slice(); // see maps.js
 
 middle_z = grid[0].length/2;
 middle_x = grid.length/2;
+
+pill_count = 0;
+pills_eaten = 0;
 
 
 function addmap(scene, grid, tile){ // tile is the obj to clone from
@@ -74,9 +81,11 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 			}
 			if(grid[i][j] == '.'){
 				add_pill((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
+				pill_count++;
 			}
 			if(grid[i][j] == 'O'){
 				add_big_pill((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
+				pill_count++;
 			}
 			if(grid[i][j] === 'P'){
 				var pacman = add_pacman((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
@@ -93,7 +102,7 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 		tile[i].position.set(tiles[i][0] * tilewidth, 0, tiles[i][1] * tilewidth);
 		scene.add(tile[i]);
 	}
-
+	console.log(pill_count);
 	return [pacman, tilewidth, skulls];
 }
 
@@ -158,6 +167,15 @@ const pointLightHelper = new THREE.PointLightHelper( light, 1 );
 
 const pointLightHelper2 = new THREE.PointLightHelper( green_light, 1 );
 
+
+function end_game_win() {
+    canvas.hidden = true;
+    end_canvas.hidden = false;
+
+    var ctx = end_canvas.getContext("2d");
+    ctx.font = '50px serif';
+    ctx.fillText('WINNER !', 500, 300);
+}
 
 if(LIGHT_HELPERS){
 	scene.add( pointLightHelper );
@@ -237,6 +255,15 @@ function add_big_pill(x_position, z_position){
 	big_pill_obj.add(big_pill);
 	big_pill_obj.isBigPill = true;
 	big_pill_obj.position.set(x_position, 5, z_position);
+}
+
+function check_level_win(){
+	console.log(pills_eaten);
+	console.log(pill_count);
+	if(pill_count != 0 && pills_eaten == pill_count){
+		console.log("level complete");
+		end_game_win();
+	}
 }
 
 
@@ -354,10 +381,10 @@ function update_pacman(delta){
 	    }
 	}
     if (keys_pressed['65']) { // a
-        pacman.direction.applyAxisAngle(Y_UP_DIRECTION, Math.PI / 2 * delta);
+        pacman.direction.applyAxisAngle(Y_UP_DIRECTION, Math.PI / 2 * PAC_ROT_SPEED * delta);
     }
     if (keys_pressed['68']) { // d
-        pacman.direction.applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2 * delta);
+        pacman.direction.applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2 * PAC_ROT_SPEED * delta);
     }
 
 	// check for skull collision
@@ -377,7 +404,10 @@ function update_pacman(delta){
 			if(distance(pacman, object) < correction_delta){
 				console.log("Pill COLLISION")
 				// disapear pill
-				
+				scene.remove(object);
+				pills_eaten++;
+				check_level_win();
+				return;
 				// effects if any
 			}
 
@@ -388,6 +418,10 @@ function update_pacman(delta){
 			if(distance(pacman, object) < correction_delta){
 				console.log("Big Pill COLLISION")
 				// disapear Big pill
+				scene.remove(object);
+				pills_eaten++;
+				check_level_win();
+				return;
 				// effects
 			}
 
