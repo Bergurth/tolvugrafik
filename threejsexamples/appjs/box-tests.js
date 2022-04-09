@@ -16,13 +16,15 @@ var SKULL_RAD = 2;
 // Helpers
 var TILE_HELPERS = false;
 var PACMAN_HELPERS = false;
-var ORIGIN_HELPERS = true;
-var LIGHT_HELPERS = true;
-var SKULL_HELPERS = true;
+var ORIGIN_HELPERS = false;
+var LIGHT_HELPERS = false;
+var SKULL_HELPERS = false;
 
 // dev related configs
 var SKULLS_MOVE = true;
 var SKULLS_VISIBLE = true;
+
+var camera_choice = 2;
 
 //var game_end_canvas = document.getElementById('game-end');
 
@@ -38,6 +40,9 @@ const camera = new THREE.PerspectiveCamera( 60, canvas.clientWidth/canvas.client
 camera.position.set(75, 75, 75);
 //camera.lookAt(0,0,0);
 
+const pac_cam = new THREE.PerspectiveCamera( 60, canvas.clientWidth/canvas.clientHeight, 0.2, 1000 );
+pac_cam.position.set(-75, 0, 75);
+pac_cam.up.set(0,-1,0);
 // Bæta við músarstýringu
 const controls = new THREE.OrbitControls( camera, canvas );
 
@@ -123,6 +128,9 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 // pacman = addmap(scene, grid, box);
 // let[pacman, skulls, ... ] = addmap(scene, grid, box);
 let[pacman, tilewidth, skulls] = addmap(scene, grid, box);
+
+camera.lookAt(pacman);
+pac_cam.lookAt(pacman.position);
 
 var half_tile = Math.round(tilewidth / 2.0);
 
@@ -342,6 +350,8 @@ function add_pacman(x_position, z_position){
 
 	//pac_obj.add(axes);
 
+	pac_obj.add(pac_cam);
+
 	pac_obj.add(pac);
 	pac_obj.add(black_pac);
 	pac_obj.position.set(x_position,5,z_position); // This works
@@ -400,6 +410,15 @@ var keys_pressed = function(){
         return keysPressed;
 
 }();
+
+function update_camera(){
+	if(keys_pressed['49']){
+		camera_choice = 1;
+	}
+	if(keys_pressed['50']){
+		camera_choice = 2;
+	}
+}
 
 function update_pacman(delta, now){
 	var _lookAt = new THREE.Vector3();
@@ -492,12 +511,12 @@ function update_pacman(delta, now){
 				console.log("Big Pill COLLISION")
 				// disapear Big pill
 				scene.remove(object);
+				// effects
 				pills_eaten++;
 				check_level_win();
 				power_up_pacman();
 				pacman.power_up_time = now;
 				return;
-				// effects
 			}
 
 		}	
@@ -602,7 +621,14 @@ const animate = function () {
 	update_skulls(timeDelta, now);
 
     controls.update();
-	renderer.render( scene, camera );
+
+    update_camera();
+    if(camera_choice == 1){
+		renderer.render( scene, camera );
+	}
+	if(camera_choice == 2){
+		renderer.render( scene, pac_cam );
+	}
 	//console.log(keys_pressed);
 };
 
