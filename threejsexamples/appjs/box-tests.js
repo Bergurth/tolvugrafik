@@ -1,7 +1,9 @@
 
 var PAC_SPEED = 25;
 var PAC_ROT_SPEED = 3;
+var PAC_SPEED_MULTIPLIER = 1;
 var SKULL_SPEED = 15;
+var SKULL_SPEED_MULTIPLIER = 1;
 var X_DIRECTION = new THREE.Vector3(1, 0, 0);
 var MINUS_X_DIRECTION = new THREE.Vector3(-1, 0, 0);
 var Z_DIRECTION = new THREE.Vector3(0,0,1);
@@ -399,15 +401,20 @@ var keys_pressed = function(){
 
 }();
 
-function update_pacman(delta){
+function update_pacman(delta, now){
 	var _lookAt = new THREE.Vector3();
     pacman.up.copy(pacman.direction).applyAxisAngle(Y_UP_DIRECTION, -Math.PI / 2);
     pacman.lookAt(_lookAt.copy(pacman.position).add(Y_UP_DIRECTION));
 
+    //power down pacman if rush over
+    if (pacman_powerd_up && now - pacman.power_up_time > 10000) {
+                power_down_pacman();
+    }
+
     if(keys_pressed['87']){ // w
 
 		//pacman.translateOnAxis(pac_forward_vec, PAC_SPEED * delta); // change to pac-direction
-		pacman.translateOnAxis(pac_forward_vec, PAC_SPEED * delta);
+		pacman.translateOnAxis(pac_forward_vec, PAC_SPEED * delta * PAC_SPEED_MULTIPLIER);
 
 		var correction_delta = PACMAN_RAD 
 
@@ -446,6 +453,11 @@ function update_pacman(delta){
 			if(distance(pacman, object) < correction_delta + SKULL_RAD){
 				console.log("SKULL COLLISION")
 				// pacman lose life + respawn if appropriate
+				if(pacman_powerd_up){ // eating skull
+					scene.remove(object);
+					return;
+				}
+
 				pacman_lives--;
 				pac_lives.innerHTML = pacman_lives;
 				if(pacman_lives <= 0){end_game_lose();};
@@ -482,18 +494,8 @@ function update_pacman(delta){
 				scene.remove(object);
 				pills_eaten++;
 				check_level_win();
-				//lighting_color = red;
-				// lights.forEach(function(light){
-				// 	light.color.setHex(red);
-				// });
-				// for(let i = 0; i < lights.length; i++){
-				// 	lights[i].color.setHex(red);
-				// }
-				light_A.color.setHex(red);
-				light.color.setHex(red);
-				light_B.color.setHex(red);
-				light_C.color.setHex(red);
-				pacman_powerd_up = true;
+				power_up_pacman();
+				pacman.power_up_time = now;
 				return;
 				// effects
 			}
@@ -504,6 +506,24 @@ function update_pacman(delta){
 
 
 } // update_pacman
+
+function power_up_pacman(){
+	light_A.color.setHex(red);
+	light.color.setHex(red);
+	light_B.color.setHex(red);
+	light_C.color.setHex(red);
+	pacman_powerd_up = true;
+	PAC_SPEED_MULTIPLIER = 1.5;
+}
+
+function power_down_pacman(){
+	light_A.color.setHex(lighting_color);
+	light.color.setHex(lighting_color);
+	light_B.color.setHex(lighting_color);
+	light_C.color.setHex(lighting_color);
+	pacman_powerd_up = false;
+	PAC_SPEED_MULTIPLIER = 1;
+}
 
 function update_skulls(delta){
 	scene.children.forEach(function(object){
@@ -578,8 +598,8 @@ const animate = function () {
 
 	requestAnimationFrame( animate );
 	//console.log(timeDelta);
-	update_pacman(timeDelta);
-	update_skulls(timeDelta);
+	update_pacman(timeDelta, now);
+	update_skulls(timeDelta, now);
 
     controls.update();
 	renderer.render( scene, camera );
