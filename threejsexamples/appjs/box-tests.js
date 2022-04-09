@@ -27,6 +27,8 @@ var SKULLS_VISIBLE = true;
 // Ná í striga og skilgreina birti
 const canvas = document.querySelector('#c');
 const end_canvas = document.querySelector('#endgame');
+const pac_lives = document.querySelector('#paclives');
+const pac_lives_label = document.querySelector('#pacliveslabel');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 
 // Skilgreina myndavél og staðsetja hana
@@ -61,7 +63,7 @@ camera.lookAt(box);
 //var maps;
 
 // grid should be square
-grid = map1.slice(); // see maps.js
+grid = map6.slice(); // see maps.js
 
 middle_z = grid[0].length/2;
 middle_x = grid.length/2;
@@ -70,6 +72,10 @@ pill_count = 0;
 pills_eaten = 0;
 var pacman_spawn_point;
 var pacman_lives = 3;
+pac_lives.innerHTML = pacman_lives;
+
+// const gui = new dat.GUI();
+// //gui.add(pacman_lives);
 
 
 function addmap(scene, grid, tile){ // tile is the obj to clone from
@@ -175,8 +181,11 @@ const pointLightHelper2 = new THREE.PointLightHelper( green_light, 1 );
 function end_game_win() {
     canvas.hidden = true;
     end_canvas.hidden = false;
+    pac_lives.hidden = true;
+    pac_lives_label.hidden = true;
 
     var ctx = end_canvas.getContext("2d");
+    ctx.fillStyle = '#ff0000';
     ctx.font = '50px serif';
     ctx.fillText('WINNER !', 500, 300);
 }
@@ -185,8 +194,11 @@ function end_game_win() {
 function end_game_lose() {
     canvas.hidden = true;
     end_canvas.hidden = false;
+    pac_lives.hidden = true;
+    pac_lives_label.hidden = true;
 
     var ctx = end_canvas.getContext("2d");
+    ctx.fillStyle = '#ff0000';
     ctx.font = '50px serif';
     ctx.fillText('GAME OVER !', 500, 300);
 }
@@ -410,6 +422,7 @@ function update_pacman(delta){
 				console.log("SKULL COLLISION")
 				// pacman lose life + respawn if appropriate
 				pacman_lives--;
+				pac_lives.innerHTML = pacman_lives;
 				if(pacman_lives <= 0){end_game_lose();};
 
 				pacman.position.set(
