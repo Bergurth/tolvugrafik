@@ -63,7 +63,7 @@ camera.lookAt(box);
 //var maps;
 
 // grid should be square
-grid = map6.slice(); // see maps.js
+grid = map1.slice(); // see maps.js
 
 middle_z = grid[0].length/2;
 middle_x = grid.length/2;
@@ -73,6 +73,8 @@ pills_eaten = 0;
 var pacman_spawn_point;
 var pacman_lives = 3;
 pac_lives.innerHTML = pacman_lives;
+
+var pacman_powerd_up = false;
 
 // const gui = new dat.GUI();
 // //gui.add(pacman_lives);
@@ -156,27 +158,40 @@ if(PACMAN_HELPERS){
 	pacman.add(axes);	
 }
 
+// colors
+var blue = 0x0000FF;
+var red = 0xFF0000;
+var white = 0xFFFFFF;
+var green = 0x00FF00;
+
+var lighting_color = white;
+
+
+var lights = [];
 // Ljósgjafinn er í miðri sólinni ( í (0, 0, 0) )
-const light = new THREE.PointLight( 0xFFFFFF, 3 );
+const light = new THREE.PointLight(lighting_color, 3 );
 light.position.set( 100, 100, 100 );
 scene.add(light)
-const red_light = new THREE.PointLight(0xFF0000,3);
-red_light.position.set(-100, 100, 100);
-scene.add(red_light);
+const light_A = new THREE.PointLight(lighting_color,3);
+light_A.position.set(-100, 100, 100);
+scene.add(light_A);
 
-const blue_light = new THREE.PointLight(0x0000FF,3);
-blue_light.position.set(100, 100, -100);
-scene.add(blue_light);
+const light_B = new THREE.PointLight(lighting_color,3);
+light_B.position.set(100, 100, -100);
+scene.add(light_B);
 
-const green_light = new THREE.PointLight(0x00FF00,3);
-green_light.position.set(100, 100, -100);
-scene.add(green_light);
+const light_C = new THREE.PointLight(lighting_color,3);
+light_C.position.set(100, 100, -100);
+scene.add(light_C);
+
+console.dir(light_C);
 
 
 const pointLightHelper = new THREE.PointLightHelper( light, 1 );
 
-const pointLightHelper2 = new THREE.PointLightHelper( green_light, 1 );
+const pointLightHelper2 = new THREE.PointLightHelper( light_C, 1 );
 
+lights.push([light, light_A, light_B, light_C]);
 
 function end_game_win() {
     canvas.hidden = true;
@@ -312,6 +327,16 @@ function add_pacman(x_position, z_position){
 	//black_pac.position.set(x_position,5,z_position);
 	//black_pac.rotation.x = (Math.PI / 2);
 	scene.add( black_pac );
+
+	const eye_geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+	const eye_mat = new THREE.MeshPhongMaterial({color: 0x000000});
+	const eye_1 = new THREE.Mesh(eye_geo, eye_mat);
+	//eye.position.set()
+	const eye_2 = eye_1.clone();
+	eye_1.position.set(2.4,2.4,2.4);
+	eye_2.position.set(2.4,-2.4,2.4);
+	pac_obj.add(eye_1);
+	pac_obj.add(eye_2);
 
 	//pac_obj.add(axes);
 
@@ -457,6 +482,18 @@ function update_pacman(delta){
 				scene.remove(object);
 				pills_eaten++;
 				check_level_win();
+				//lighting_color = red;
+				// lights.forEach(function(light){
+				// 	light.color.setHex(red);
+				// });
+				// for(let i = 0; i < lights.length; i++){
+				// 	lights[i].color.setHex(red);
+				// }
+				light_A.color.setHex(red);
+				light.color.setHex(red);
+				light_B.color.setHex(red);
+				light_C.color.setHex(red);
+				pacman_powerd_up = true;
 				return;
 				// effects
 			}
