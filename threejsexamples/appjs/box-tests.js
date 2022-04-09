@@ -8,6 +8,7 @@ var MINUS_Z_DIRECTION = new THREE.Vector3(0,0,-1);
 var Y_UP_DIRECTION = new THREE.Vector3(0,1,0);
 var Y_DOWN_DIRECTION = new THREE.Vector3(0,-1,0);
 var PACMAN_RAD = 4;
+var SKULL_RAD = 2;
 
 // Helpers
 var TILE_HELPERS = false;
@@ -56,7 +57,7 @@ camera.lookAt(box);
 //var maps;
 
 // grid should be square
-grid = map2; // see maps.js
+grid = map1; // see maps.js
 
 middle_z = grid[0].length/2;
 middle_x = grid.length/2;
@@ -70,6 +71,12 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 		for(let j = grid.length -1 ; j > -1; j--){
 			if(grid[i][j] !== 'X'){
 				tiles.push([i - middle_x, j - middle_z]);
+			}
+			if(grid[i][j] == '.'){
+				add_pill((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
+			}
+			if(grid[i][j] == 'O'){
+				add_big_pill((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
 			}
 			if(grid[i][j] === 'P'){
 				var pacman = add_pacman((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
@@ -206,6 +213,32 @@ var skull_forward = new THREE.ArrowHelper(
 //pacman.add(pac_forward_vec);
 
 
+function add_pill(x_position, z_position){
+	const pill_obj = new THREE.Object3D();
+	scene.add(pill_obj);
+
+	pill_geo = new THREE.SphereGeometry( 0.5, 32, 16 );
+	pill_mat = new THREE.MeshPhongMaterial({color: 0xffffff});
+	pill = new THREE.Mesh(pill_geo, pill_mat);
+
+	pill_obj.add(pill);
+	pill_obj.isPill = true;
+	pill_obj.position.set(x_position, 5, z_position);
+}
+
+function add_big_pill(x_position, z_position){
+	const big_pill_obj = new THREE.Object3D();
+	scene.add(big_pill_obj);
+
+	big_pill_geo = new THREE.SphereGeometry( 1.5, 32, 16 );
+	big_pill_mat = new THREE.MeshPhongMaterial({color: 0xffffff});
+	big_pill = new THREE.Mesh(big_pill_geo, big_pill_mat);
+
+	big_pill_obj.add(big_pill);
+	big_pill_obj.isBigPill = true;
+	big_pill_obj.position.set(x_position, 5, z_position);
+}
+
 
 function add_pacman(x_position, z_position){
     const pac_obj = new THREE.Object3D();
@@ -332,12 +365,34 @@ function update_pacman(delta){
 
 		if(object.isSkull === true){
 
-			if(distance(pacman, object) < correction_delta){
+			if(distance(pacman, object) < correction_delta + SKULL_RAD){
 				console.log("SKULL COLLISION")
 				// pacman lose life + respawn if appropriate
 			}
 
 		}
+		// pills
+		if(object.isPill === true){
+
+			if(distance(pacman, object) < correction_delta){
+				console.log("Pill COLLISION")
+				// disapear pill
+				
+				// effects if any
+			}
+
+		}
+		// big pills
+		if(object.isBigPill === true){
+
+			if(distance(pacman, object) < correction_delta){
+				console.log("Big Pill COLLISION")
+				// disapear Big pill
+				// effects
+			}
+
+		}	
+
 	})
 
 
