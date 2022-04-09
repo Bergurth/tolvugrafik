@@ -10,8 +10,8 @@ var Y_DOWN_DIRECTION = new THREE.Vector3(0,-1,0);
 var PACMAN_RAD = 4;
 
 // Helpers
-var TILE_HELPERS = true;
-var PACMAN_HELPERS = false;
+var TILE_HELPERS = false;
+var PACMAN_HELPERS = true;
 var ORIGIN_HELPERS = true;
 var LIGHT_HELPERS = true;
 var SKULL_HELPERS = true;
@@ -60,14 +60,14 @@ grid = [  'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
 		  'XX.XX.X.XX.XXXX.XXXX.XXXXXX.XX',
 		  'XX.XX.X.XX.XXXX.XXXX.XXXXXX.XX',
 		  'XX.XX.X.XX.X............XX..XX',
-		  'XX....S......XXXXXXXXXX....XXX',
+		  'XX...........XXXXXXXXXX....XXX',
 		  'XX.XXXXX.XXX.XXXXX......XX..XX',
 		  'XX.XXXXX.XXX....XX.XXXX....XXX',
 		  'XX.XXXXX...XXXX.XX.XXXX.XX.XXX',
 		  'XX.......X..P...........XX.XXX',
 		  'XXXXX.XXXX.XXXX.XXX.XXX.XX.XXX',
 		  'XXX.....XX..XXX.XXX.XXX.XX.XXX',
-		  'XX..XXX.XXX..........XX..X..XX',
+		  'XX..XXX.XXX...S......XX..X..XX',
 		  'XX.XX.....X.XXX.XX.XXXXX.XX.XX',
 		  'XX.XX.X.XXX.XXX.XX...........X',
 		  'XX.XX.X.XXX.XXX.XX.XXXXX.XXX.X',
@@ -149,9 +149,6 @@ var distance = function (thing1, thing2) {
     };
 
 
-
-
-//add_pacman(0,0);
 if(PACMAN_HELPERS){
 	pacman.add(axes);	
 }
@@ -268,32 +265,30 @@ function add_pacman(x_position, z_position){
 
 function add_skull(x_position, z_position){
 			const skull_obj = new THREE.Object3D();
+			scene.add(skull_obj);
+			skull_obj.position.set(x_position,2,z_position);
             const mtlLoader = new THREE.MTLLoader();
             mtlLoader.load('resources/models/skull/skull.mtl', (mtl) => {
               mtl.preload();
               const objLoader = new THREE.OBJLoader();
               objLoader.setMaterials(mtl);
               objLoader.load('resources/models/skull/skull.obj', (skull) => {
-                skull.position.y = 2;
-                skull.position.x = x_position;
-                skull.position.z = z_position;
-                skull.rotation.x = Math.PI * -.5;
-                skull.scale['x'] = 0.3;
-                skull.scale['y'] = 0.3;
-                skull.scale['z'] = 0.3;
-                skull_obj.add(skull);
-                skull_obj.isSkull = true;
-                skull.isSkull = true;
-                //skull.add(skull_forward);
-                //scene.add(skull_obj);
 
-                //skull.direction = new THREE.Vector3(0,-2,0).normalize();
-                //skull.direction = new THREE.Vector3(0,0,-2).normalize();
-                skull_obj.direction = new THREE.Vector3(0,0,2).normalize();
-                scene.add(skull_obj);
-                return skull;
+	            skull.rotation.x = Math.PI * -.5;
+	            skull.scale['x'] = 0.3;
+	            skull.scale['y'] = 0.3;
+	            skull.scale['z'] = 0.3;
+	            
+	            skull_obj.isSkull = true;
+	            skull.isSkull = true;
+	            scene.add(skull);
+	            skull_obj.add(skull);
+	            skull_obj.direction = new THREE.Vector3(0,0,2).normalize();
+
               });
             });
+           if(SKULL_HELPERS){skull_obj.add(axes)};
+           return skull_obj; 
 
 }
 
@@ -354,10 +349,9 @@ function update_pacman(delta){
 
 	// check for skull collision
 	scene.children.forEach(function(object){
-		console.log(typeof object);
-		console.dir(object);
+
 		if(object.isSkull === true){
-			//console.log(object.position)
+
 			if(distance(pacman, object) < correction_delta){
 				console.log("SKULL COLLISION")
 				// pacman lose life + respawn if appropriate
@@ -380,7 +374,7 @@ function update_skulls(delta){
 } // update_skulls
 
 function update_skull(skull, delta){
-	// console.log(typeof skull); // object
+	//console.log(typeof skull); // object
 	// console.dir(skull); // position
 	var former_location = new THREE.Vector3();
 	var new_location = new THREE.Vector3();
@@ -389,7 +383,7 @@ function update_skull(skull, delta){
 
 	former_location.copy(skull.position) //.addScaledVector(skull.direction, 0.5).round();
 
-	//skull.translateOnAxis(skull.direction,  SKULL_SPEED * delta);
+	skull.translateOnAxis(skull.direction,  SKULL_SPEED * delta);
 
 	new_location.copy(skull.position) //.addScaledVector(skull.direction, 0.5).round();
 
@@ -411,6 +405,8 @@ function update_skull(skull, delta){
 		console.log("switchin")
 		console.log("skull position is ...")
 		console.log(skull.position)
+		console.log("skull grid position is")
+		console.log(game_to_grid(skull.position['z']))
 		console.log("skull direction")
 		console.log(skull.direction)
 
