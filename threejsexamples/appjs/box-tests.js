@@ -68,6 +68,8 @@ middle_x = grid.length/2;
 
 pill_count = 0;
 pills_eaten = 0;
+var pacman_spawn_point;
+var pacman_lives = 3;
 
 
 function addmap(scene, grid, tile){ // tile is the obj to clone from
@@ -88,6 +90,8 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 				pill_count++;
 			}
 			if(grid[i][j] === 'P'){
+				pacman_spawn_point = [i,j];
+				//pacman_game_spawn_point = 
 				var pacman = add_pacman((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
 			}
 			if(grid[i][j] === 'S'){
@@ -175,6 +179,16 @@ function end_game_win() {
     var ctx = end_canvas.getContext("2d");
     ctx.font = '50px serif';
     ctx.fillText('WINNER !', 500, 300);
+}
+
+
+function end_game_lose() {
+    canvas.hidden = true;
+    end_canvas.hidden = false;
+
+    var ctx = end_canvas.getContext("2d");
+    ctx.font = '50px serif';
+    ctx.fillText('GAME OVER !', 500, 300);
 }
 
 if(LIGHT_HELPERS){
@@ -395,6 +409,15 @@ function update_pacman(delta){
 			if(distance(pacman, object) < correction_delta + SKULL_RAD){
 				console.log("SKULL COLLISION")
 				// pacman lose life + respawn if appropriate
+				pacman_lives--;
+				if(pacman_lives <= 0){end_game_lose();};
+
+				pacman.position.set(
+					grid_to_game(pacman_spawn_point[0]),
+					5,
+					grid_to_game(pacman_spawn_point[1])
+					);
+				return;
 			}
 
 		}
