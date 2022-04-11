@@ -24,6 +24,8 @@ var SKULL_HELPERS = false;
 var SKULLS_MOVE = true;
 var SKULLS_VISIBLE = true;
 
+var LEVELS_ACTIVE = true;
+
 var camera_choice = 1;
 
 
@@ -39,7 +41,6 @@ const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 // Skilgreina myndavél og staðsetja hana
 const camera = new THREE.PerspectiveCamera( 60, canvas.clientWidth/canvas.clientHeight, 0.2, 1000 );
 camera.position.set(75, 75, 75);
-//camera.lookAt(0,0,0);
 
 const pac_cam = new THREE.PerspectiveCamera( 60, canvas.clientWidth/canvas.clientHeight, 0.2, 1000 );
 pac_cam.position.set(-75, 0, 75);
@@ -59,12 +60,7 @@ const loader = new THREE.TextureLoader();
 // Hlöðum inn mynstrinu...
 const texture = loader.load('resources/images/brick29.jpg');
 
-//scene.background = loader.load( 'resources/images/stars2.jpg' );
-//scene.background = loader.load( 'resources/images/sea-punk-psychedelic.jpg' );
-//scene.background = loader.load( 'resources/images/original.jpg' );
-//scene.background = loader.load( 'resources/images/vaporwave-41.jpg' );
 scene.background = loader.load(backgrounds[4]);
-
 
 const boxMaterial = new THREE.MeshBasicMaterial({map:texture});
 const box = new THREE.Mesh(boxGeo, boxMaterial);
@@ -76,10 +72,8 @@ if(TILE_HELPERS){
 
 camera.lookAt(box);
 
-//var maps;
-
 // grid should be square
-grid = map1.slice(); // see maps.js
+grid = maps[0].slice(); // see maps.js
 
 middle_z = grid[0].length/2;
 middle_x = grid.length/2;
@@ -91,10 +85,7 @@ var pacman_lives = 3;
 pac_lives.innerHTML = pacman_lives;
 
 var pacman_powerd_up = false;
-
-// const gui = new dat.GUI();
-// //gui.add(pacman_lives);
-
+var level_progression = 0;
 
 function addmap(scene, grid, tile){ // tile is the obj to clone from
 	var tilewidth = tile.geometry.parameters['width'];
@@ -115,8 +106,9 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 			}
 			if(grid[i][j] === 'P'){
 				pacman_spawn_point = [i,j];
-				//pacman_game_spawn_point = 
-				var pacman = add_pacman((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
+				if(level_progression === 0){
+					var pacman = add_pacman((i - middle_x) * tilewidth, (j - middle_z)* tilewidth);
+				}
 			}
 			if(grid[i][j] === 'S'){
 				skulls.push(add_skull((i - middle_x) * tilewidth, (j - middle_z)* tilewidth));
@@ -128,14 +120,12 @@ function addmap(scene, grid, tile){ // tile is the obj to clone from
 
 		tile[i] = box.clone();
 		tile[i].position.set(tiles[i][0] * tilewidth, 0, tiles[i][1] * tilewidth);
+		tile.isTile = true;
 		scene.add(tile[i]);
 	}
-	console.log(pill_count);
 	return [pacman, tilewidth, skulls];
 }
 
-// pacman = addmap(scene, grid, box);
-// let[pacman, skulls, ... ] = addmap(scene, grid, box);
 let[pacman, tilewidth, skulls] = addmap(scene, grid, box);
 
 camera.lookAt(pacman);
@@ -177,6 +167,40 @@ if(PACMAN_HELPERS){
 	pacman.add(axes);	
 }
 
+function load_new_level(new_map, tile, pacman_lives, background){
+	scene.children.forEach(function(object){
+		if(object.isSkull
+			|| object.isTile
+			|| object.isPill
+			|| object.isBigPill
+			//|| object.isPacman
+			){
+			scene.remove(object);
+		}
+	});
+	//scene.children={}; // causes errors
+	// re add stuff based on new grid 
+	pacman_powerd_up = false;
+	//pacman_lives = pacman_lives;
+	grid = new_map.slice();
+	middle_z = grid[0].length/2;
+	middle_x = grid.length/2;
+	let[not_pac, tilewidth, skulls] = addmap(scene, grid, tile);
+
+	//camera.lookAt(pacman);
+	//pac_cam.lookAt(pacman.position);
+
+	half_tile = Math.round(tilewidth / 2.0);
+	console.log(backgrounds[background])
+	scene.background = loader.load(backgrounds[background]);
+	pacman.position.set(
+	grid_to_game(pacman_spawn_point[0]),
+	5,
+	grid_to_game(pacman_spawn_point[1])
+	);
+}
+
+
 // colors
 var blue = 0x0000FF;
 var red = 0xFF0000;
@@ -213,15 +237,22 @@ const pointLightHelper2 = new THREE.PointLightHelper( light_C, 1 );
 lights.push([light, light_A, light_B, light_C]);
 
 function end_game_win() {
-    canvas.hidden = true;
-    end_canvas.hidden = false;
-    pac_lives.hidden = true;
-    pac_lives_label.hidden = true;
 
-    var ctx = end_canvas.getContext("2d");
-    ctx.fillStyle = '#ff0000';
-    ctx.font = '50px serif';
-    ctx.fillText('WINNER !', 500, 300);
+	if(!LEVELS_ACTIVE){
+	    canvas.hidden = true;
+	    end_canvas.hidden = false;
+	    pac_lives.hidden = true;
+	    pac_lives_label.hidden = true;
+
+	    var ctx = end_canvas.getContext("2d");
+	    ctx.fillStyle = '#ff0000';
+	    ctx.font = '50px serif';
+	    ctx.fillText('WINNER !', 500, 300);
+	    return;
+	}
+	level_progression++;
+	power_down_pacman();
+	load_new_level(maps[level_progression], box, pac_lives, level_progression);
 }
 
 
@@ -365,6 +396,7 @@ function add_pacman(x_position, z_position){
 	pac_obj.add(black_pac);
 	pac_obj.position.set(x_position,5,z_position); // This works
 	pac_obj.rotation.x = (Math.PI / 2);
+	pac_obj.isPacman = true;
 	pac_obj.direction = new THREE.Vector3(2, 0, 0).normalize(); // not working yet
 	// const arrowHelper = new THREE.ArrowHelper( pac_obj.direction, pac_obj, 50 );
 	// scene.add( arrowHelper );
